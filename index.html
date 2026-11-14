@@ -997,6 +997,38 @@ function playWordSound(event) {
 
 /* 3. PHONICS SOUND */
 
+const PHONICS_SOUNDS = {
+  A: "ah",
+  B: "buh",
+  C: "kuh",
+  D: "duh",
+  E: "eh",
+  F: "fuh",
+  G: "guh",
+  H: "huh",
+  I: "ih",
+  J: "juh",
+  K: "kuh",
+  L: "luh",
+  M: "muh",
+  N: "nuh",
+  O: "ah",
+  P: "puh",
+  Q: "kwuh",
+  R: "ruh",
+  S: "suh",
+  T: "tuh",
+  U: "uh",
+  V: "vuh",
+  W: "wuh",
+  X: "ks",
+  Y: "yuh",
+  Z: "zuh"
+};
+
+
+/* 3. PHONICS SOUND */
+
 function playPhonicsSound(event) {
 
   event.stopPropagation();
@@ -1009,8 +1041,22 @@ function playPhonicsSound(event) {
   const item =
     alphabet[letterIndex];
 
-  speakText(item[4]);
+  const shownLetter =
+    currentCard % 2 === 1
+      ? item[1]
+      : item[0];
 
+  const phonics =
+    PHONICS_SOUNDS[shownLetter.toUpperCase()];
+
+  if (!phonics) return;
+
+  speakText(
+    shownLetter + " says " + phonics
+  );
+
+  document.getElementById("message").textContent =
+    "🔊 Phonics: " + phonics;
 }
 
 
