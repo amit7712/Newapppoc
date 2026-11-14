@@ -45,3 +45,9 @@ For every future commit, add one entry here with:
 - What we did: Marked project phases with status and documented the stable-build-before-deployment rule.
 - Files changed: `plan.md`
 - User instruction: Keep the project structured by phases and deploy to GitHub Pages only after a stable build is ready and tested.
+
+## db303cf1fe2b052fcec791fafc76f36dfa6c1617
+- Message: `fix: refresh PWA cache for stable build`
+- What we did: Bumped the service-worker cache version so the updated `index.html` can replace an older cached app after the next load.
+- Files changed: `sw.js`
+- User instruction: Keep GitHub Pages/PWA deployment stable and avoid serving an outdated build after changes.
