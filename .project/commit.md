@@ -51,3 +51,15 @@ For every future commit, add one entry here with:
 - What we did: Bumped the service-worker cache version so the updated `index.html` can replace an older cached app after the next load.
 - Files changed: `sw.js`
 - User instruction: Keep GitHub Pages/PWA deployment stable and avoid serving an outdated build after changes.
+
+## Structure cleanup commits
+- `2e618971e237cf6ccdaee48bda07a78629433dcf` — `refactor: keep root entrypoint and move app assets into folders` — Updated `index.html` references so the root entrypoint loads managed assets from `assets/`.
+- `14ba696ca38702ebe508c6449de6d436e1ddc5f9` — `refactor: move app icon into assets` — Added the managed SVG app icon under `assets/icons/`.
+- `bd11733ea3307f33d837e93d316082c8cbbb62f1` — `refactor: move PWA manifest into assets` — Added the managed manifest under `assets/`.
+- `e3ee156b23dd5cf05c281c000bc3f43437f37df4` — `refactor: remove root manifest after relocation` — Removed the duplicate root manifest.
+- `0c1994306c9f449862d4b15ac3783ddccd527715` — `refactor: archive service worker under project structure` — Moved the service-worker source under `.project/pwa/`.
+- `f139e70c1b60a19f2bb0d1f4ab0d1f09e1b44617` — `refactor: remove root service worker during structure cleanup` — Removed the root service worker so the root remains minimal.
+- `b36964ad63d3ac0adeaca269605b87b65578cfd2` — `refactor: remove legacy root icon after asset migration` — Removed the old root 192px PNG icon.
+- `b23a16f72a5644ae923cd0f2258087d00958a8d4` — `refactor: remove legacy root icon after asset migration` — Removed the old root 512px PNG icon.
+- `9df2482eab51f71e179d9239cb4fba1caa63e459` — `docs: define clean project structure and development rules` — Updated root README with structure and deployment rules.
+- `df163e94894edbd27ff2c0f79fcba9dc24fee171` — `docs: update project state after structure cleanup` — Updated the persistent project summary.
