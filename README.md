@@ -3,6 +3,21 @@
 ## Project
 Interactive Alphabet Flipper for children.
 
+## Root structure
+The repository root is intentionally kept minimal:
+- `index.html` — main application entrypoint.
+- `README.md` — project overview and operating rules.
+
+Everything else belongs inside managed project folders.
+
+## Project folders
+- `.project/plan.md` — phases, priorities, and completion criteria.
+- `.project/commit.md` — chronological commit log with ID, message, work, files, and user instruction.
+- `.project/summary.md` — persistent project state so work can continue without repeatedly re-explaining context.
+- `.project/archive/` — legacy backups and temporary/test files.
+- `.project/pwa/` — PWA/service-worker work kept separate from the root entrypoint.
+- `assets/` — application assets such as the manifest and app icon.
+
 ## Current implemented idea
 - Start Learning opens the learning screen.
 - 52 cards are available: A–Z capital and a–z small letters.
@@ -13,21 +28,16 @@ Interactive Alphabet Flipper for children.
 - Three separate sound controls are available: Letter, Word, and Phonics.
 - Repeat Alphabets can be switched ON/OFF in Settings.
 - Progress is tracked when Repeat is OFF.
-- The existing `index.html` is the main application file.
+- The existing `index.html` remains the main application file.
 
-## Commit Log
+## Development rules
+1. Keep the root limited to the entrypoint and README.
+2. Put supporting files into the appropriate project folder.
+3. Keep `.project/plan.md`, `.project/summary.md`, and `.project/commit.md` updated as the project evolves.
+4. Do not deploy an unstable/intermediate build to GitHub Pages.
+5. Run the relevant QA checks before a stable release deployment.
 
-### 9b6c1e8437e53d6670c72b4cfda9e6c10536ebe8
-- Message: `test: add ABC txt commit`
-- What we did: Added a simple test file to verify GitHub write/commit access.
-- Files changed: `A B C.txt`
-- User instruction: Test that a simple A/B/C text file could be committed to the repository.
+## Current phase
+**Phase 1 — Baseline, cleanup, and core fixes: In progress**
 
-### d16d04d2eaa496817f84769565b74fc977333821
-- Message: `docs: add project and commit log`
-- What we did: Added `README.md` with the project's current feature summary and the initial commit history.
-- Files changed: `README.md`
-- User instruction: Keep a one-by-one commit record with commit ID, message, what was done, changed files, and the relevant instruction.
-
-## Commit logging rule
-For each future change, the next commit will record the completed previous commit's ID, message, work performed, changed files, and the instruction that caused the change.
+The reported Phonics-button issue has been addressed in `index.html`. Runtime/device verification remains part of Phase 1 QA.
