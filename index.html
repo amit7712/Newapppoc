@@ -285,6 +285,20 @@ h1 {
   transform: scale(.96);
 }
 
+.action:focus-visible,
+.back-home:focus-visible,
+.settings-btn:focus-visible,
+.primary:focus-visible,
+.toggle:focus-visible {
+  outline: 3px solid rgba(108,99,255,.45);
+  outline-offset: 3px;
+}
+
+.card:focus-visible {
+  outline: 4px solid rgba(108,99,255,.45);
+  outline-offset: 5px;
+}
+
 .message {
   margin-top: 14px;
   padding: 13px;
@@ -478,7 +492,11 @@ h1 {
       <div
         id="card"
         class="card"
-        onclick="flipCard()">
+        role="button"
+        tabindex="0"
+        aria-label="Flip the alphabet learning card"
+        onclick="flipCard()"
+        onkeydown="handleCardKeydown(event)">
 
         <div class="face front">
 
@@ -541,7 +559,9 @@ h1 {
     <div class="actions">
 
       <button
+        type="button"
         class="action letter-sound"
+        aria-label="Play the letter sound"
         onclick="playLetterSound(event)">
 
         🔤<br>
@@ -550,7 +570,9 @@ h1 {
       </button>
 
       <button
+        type="button"
         class="action word-sound"
+        aria-label="Play the word"
         onclick="playWordSound(event)">
 
         🖼️<br>
@@ -559,7 +581,9 @@ h1 {
       </button>
 
       <button
+        type="button"
         class="action phonics-sound"
+        aria-label="Play the phonics sound"
         onclick="playPhonicsSound(event)">
 
         🔊<br>
@@ -569,7 +593,7 @@ h1 {
 
     </div>
 
-    <div id="message" class="message">
+    <div id="message" class="message" role="status" aria-live="polite">
 
       🎯 Tap the card to reveal the alphabet.
 
@@ -903,6 +927,16 @@ function flipCard() {
 }
 
 
+/* KEYBOARD CARD ACCESS */
+
+function handleCardKeydown(event) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    flipCard();
+  }
+}
+
+
 /* FLIP BACK */
 
 function flipBack(event) {
@@ -988,7 +1022,12 @@ function playLetterSound(event) {
       ? item[1]
       : item[0];
 
-  speakText(shownLetter);
+  const played = speakText(shownLetter);
+
+  document.getElementById("message").textContent =
+    played
+      ? "🔊 Letter: " + shownLetter
+      : "⚠️ Letter sound is not available.";
 
 }
 
@@ -1007,7 +1046,12 @@ function playWordSound(event) {
   const item =
     alphabet[letterIndex];
 
-  speakText(item[3]);
+  const played = speakText(item[3]);
+
+  document.getElementById("message").textContent =
+    played
+      ? "🖼️ Word: " + item[3]
+      : "⚠️ Word sound is not available.";
 
 }
 
@@ -1068,10 +1112,12 @@ function playPhonicsSound(event) {
 
   if (!phonics) return;
 
-  speakText(phonics, "en-US");
+  const played = speakText(phonics, "en-US");
 
   document.getElementById("message").textContent =
-    "🔊 Phonics: " + phonics;
+    played
+      ? "🔊 Phonics: " + phonics
+      : "⚠️ Phonics sound is not available.";
 }
 
 
