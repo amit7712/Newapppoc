@@ -7,8 +7,8 @@
 <title>Alphabet Flipper</title>
 
 <link rel="manifest" href="assets/manifest.json">
-<link rel="icon" type="image/png" href="assets/icons/icon.svg">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
+<link rel="apple-touch-icon" href="assets/icons/icon.svg">
 
 <style>
 * {
@@ -922,19 +922,14 @@ function flipBack(event) {
 
 /* COMMON SPEECH FUNCTION */
 
-function speakText(text) {
+function speakText(text, lang = "en-IN") {
 
-  if (
-    window.AndroidTTS &&
-    typeof window.AndroidTTS.speak === "function"
-  ) {
-
-    window.AndroidTTS.speak(text);
-
-    return;
-
-  }
-
+  /*
+   * For phonics, use the browser speech engine directly.
+   * AndroidTTS may speak a sentence differently depending on the
+   * host voice, and we need the phonics button to be deterministic
+   * in the web app.
+   */
   if ("speechSynthesis" in window) {
 
     speechSynthesis.cancel();
@@ -942,12 +937,34 @@ function speakText(text) {
     const speech =
       new SpeechSynthesisUtterance(text);
 
-    speech.lang = "en-IN";
-    speech.rate = 0.8;
+    speech.lang = lang;
+    speech.rate = 0.72;
+    speech.pitch = 1.0;
+    speech.volume = 1.0;
 
     speechSynthesis.speak(speech);
+    return true;
 
   }
+
+  if (
+    window.AndroidTTS &&
+    typeof window.AndroidTTS.speak === "function"
+  ) {
+
+    try {
+      window.AndroidTTS.speak(text);
+      return true;
+    } catch (error) {
+      // Continue to the visible failure message below.
+    }
+
+  }
+
+  document.getElementById("message").textContent =
+    "⚠️ Voice is not available in this browser.";
+
+  return false;
 
 }
 
@@ -1051,9 +1068,7 @@ function playPhonicsSound(event) {
 
   if (!phonics) return;
 
-  speakText(
-    shownLetter + " says " + phonics
-  );
+  speakText(phonics, "en-US");
 
   document.getElementById("message").textContent =
     "🔊 Phonics: " + phonics;

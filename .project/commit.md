@@ -63,3 +63,19 @@ For every future commit, add one entry here with:
 - `b23a16f72a5644ae923cd0f2258087d00958a8d4` — `refactor: remove legacy root icon after asset migration` — Removed the old root 512px PNG icon.
 - `9df2482eab51f71e179d9239cb4fba1caa63e459` — `docs: define clean project structure and development rules` — Updated root README with structure and deployment rules.
 - `df163e94894edbd27ff2c0f79fcba9dc24fee171` — `docs: update project state after structure cleanup` — Updated the persistent project summary.
+
+
+## 08d2ed6bfebafc5871adedb5bd3d4be227ecae6a
+- Message: fix: make phonics speech use reliable browser fallback
+- What we did: Fixed the phonics speech path so it speaks the actual phonics sound directly, uses the browser speech engine when the Android bridge is unavailable, and reports when no voice engine exists. Also corrected the app icon references to use the managed asset path.
+- Files changed: index.html
+- User instruction: The Phonics button was tested again and still did not produce audio; fix the issue and continue the project using the PR-based workflow.
+- Testing status: Static code verification completed; live device/browser audio verification is still required.
+
+
+## 23b41763a38c509b8cddd9161418a21d65b4a778
+- Message: fix: prioritize browser speech for phonics
+- What we did: Changed the speech path so the web app uses browser SpeechSynthesis first, with Android TTS only as fallback. This avoids the Android bridge taking precedence over the web phonics behavior.
+- Files changed: index.html
+- User instruction: Check the phonics issue directly rather than asking the user to test the branch themselves.
+- Testing status: Code-level verification completed; actual device audio still needs runtime verification.
