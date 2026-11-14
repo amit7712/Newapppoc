@@ -23,5 +23,11 @@ Interactive Alphabet Flipper for children.
 - Files changed: `A B C.txt`
 - User instruction: Test that a simple A/B/C text file could be committed to the repository.
 
-### This README entry
-This README was added to establish the project's ongoing commit documentation. The commit ID for this README creation will be recorded in the next commit, so every completed commit remains traceable without a self-referential commit ID.
+### d16d04d2eaa496817f84769565b74fc977333821
+- Message: `docs: add project and commit log`
+- What we did: Added `README.md` with the project's current feature summary and the initial commit history.
+- Files changed: `README.md`
+- User instruction: Keep a one-by-one commit record with commit ID, message, what was done, changed files, and the relevant instruction.
+
+## Commit logging rule
+For each future change, the next commit will record the completed previous commit's ID, message, work performed, changed files, and the instruction that caused the change.
