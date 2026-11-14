@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Download App Icons</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 40px 20px;
+    background: #f5f7ff;
+  }
+  button {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    margin: 14px auto;
+    padding: 16px;
+    border: 0;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    background: linear-gradient(135deg, #6C63FF, #FF5CA8);
+  }
+  #fallbackBox {
+    display: none;
+    margin-top: 24px;
+    padding: 16px;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  #fallbackImg {
+    width: 160px;
+    height: 160px;
+    margin-top: 10px;
+    border-radius: 28px;
+  }
+</style>
+</head>
+<body>
+  <h2>ABC Flipper PNG Icon Maker</h2>
+  <canvas id="preview" width="192" height="192" style="border-radius:36px;box-shadow:0 8px 20px rgba(0,0,0,.15);"></canvas>
+  <button onclick="downloadIcon(192, 'icon-192.png')">Download icon-192.png</button>
+  <button onclick="downloadIcon(512, 'icon-512.png')">Download icon-512.png</button>
+
+  <!-- Fallback for in-app browsers / WebViews that block auto-download -->
+  <div id="fallbackBox">
+    <p id="fallbackText" style="font-size:14px;color:#333;margin:0;"></p>
+    <img id="fallbackImg" alt="Generated Icon" />
+  </div>
+
+<script>
+function drawIcon(canvas, size) {
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+
+  const grad = ctx.createLinearGradient(0, 0, size, size);
+  grad.addColorStop(0, "#6C63FF");
+  grad.addColorStop(0.5, "#9B5CFF");
+  grad.addColorStop(1, "#FF5CA8");
+
+  const r = size * 0.22;
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.arcTo(size, 0, size, size, r);
+  ctx.arcTo(size, size, 0, size, r);
+  ctx.arcTo(0, size, 0, 0, r);
+  ctx.arcTo(0, 0, size, 0, r);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "900 " + Math.round(size * 0.34) + "px Arial, sans-serif";
+  ctx.fillText("ABC", size / 2, size * 0.45);
+
+  ctx.font = "bold " + Math.round(size * 0.13) + "px Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  ctx.fillText("FLIPPER", size / 2, size * 0.72);
+}
+
+drawIcon(document.getElementById("preview"), 192);
+
+function downloadIcon(size, filename) {
+  const c = document.createElement("canvas");
+  drawIcon(c, size);
+
+  const dataUrl = c.toDataURL("image/png");
+
+  // 1. Standard browser download
+  const a = document.createElement("a");
+  a.href = dataUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  // 2. Show image below so you can long-press -> Save Image if your app blocks downloads
+  const box = document.getElementById("fallbackBox");
+  const img = document.getElementById("fallbackImg");
+  const txt = document.getElementById("fallbackText");
+  txt.textContent = "If download didn't start, long-press (or right-click) the image below to save " + filename + ":";
+  img.src = dataUrl;
+  box.style.display = "block";
+}
+</script>
+</body>
+</html>
