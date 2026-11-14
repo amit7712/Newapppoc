@@ -1,6 +1,7 @@
 # Project Summary — Alphabet Flipper
 
 ## Current state
+- Root structure cleanup completed: root now contains only `index.html` and `README.md`.
 - Repository: `amit7712/Newapppoc`
 - Main app: `index.html`
 - Current phase: Phase 1 — baseline, cleanup, and core fixes
