@@ -7,8 +7,8 @@
 <title>Alphabet Flipper</title>
 
 <link rel="manifest" href="assets/manifest.json">
-<link rel="icon" type="image/png" href="assets/icons/icon.svg">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg">
+<link rel="apple-touch-icon" href="assets/icons/icon.svg">
 
 <style>
 * {
@@ -922,30 +922,47 @@ function flipBack(event) {
 
 /* COMMON SPEECH FUNCTION */
 
-function speakText(text) {
+function speakText(text, lang = "en-IN") {
+
+  let androidSpoken = false;
 
   if (
     window.AndroidTTS &&
     typeof window.AndroidTTS.speak === "function"
   ) {
 
-    window.AndroidTTS.speak(text);
-
-    return;
+    try {
+      window.AndroidTTS.speak(text);
+      androidSpoken = true;
+    } catch (error) {
+      androidSpoken = false;
+    }
 
   }
 
-  if ("speechSynthesis" in window) {
+  /*
+   * GitHub Pages/browser fallback.
+   * Do not stop here just because an Android bridge exists:
+   * a bridge can be present but unavailable to the current page.
+   */
+  if ("speechSynthesis" in window && !androidSpoken) {
 
     speechSynthesis.cancel();
 
     const speech =
       new SpeechSynthesisUtterance(text);
 
-    speech.lang = "en-IN";
+    speech.lang = lang;
     speech.rate = 0.8;
 
     speechSynthesis.speak(speech);
+
+  }
+
+  if (!androidSpoken && !("speechSynthesis" in window)) {
+
+    document.getElementById("message").textContent =
+      "⚠️ Voice is not available in this browser.";
 
   }
 
@@ -1051,9 +1068,7 @@ function playPhonicsSound(event) {
 
   if (!phonics) return;
 
-  speakText(
-    shownLetter + " says " + phonics
-  );
+  speakText(phonics, "en-US");
 
   document.getElementById("message").textContent =
     "🔊 Phonics: " + phonics;
