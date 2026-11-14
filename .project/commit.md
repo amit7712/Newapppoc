@@ -71,3 +71,11 @@ For every future commit, add one entry here with:
 - Files changed: index.html
 - User instruction: The Phonics button was tested again and still did not produce audio; fix the issue and continue the project using the PR-based workflow.
 - Testing status: Static code verification completed; live device/browser audio verification is still required.
+
+
+## 23b41763a38c509b8cddd9161418a21d65b4a778
+- Message: fix: prioritize browser speech for phonics
+- What we did: Changed the speech path so the web app uses browser SpeechSynthesis first, with Android TTS only as fallback. This avoids the Android bridge taking precedence over the web phonics behavior.
+- Files changed: index.html
+- User instruction: Check the phonics issue directly rather than asking the user to test the branch themselves.
+- Testing status: Code-level verification completed; actual device audio still needs runtime verification.
