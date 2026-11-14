@@ -22,7 +22,25 @@
     font-size: 16px;
     font-weight: bold;
     color: white;
+    cursor: pointer;
     background: linear-gradient(135deg, #6C63FF, #FF5CA8);
+  }
+  #fallbackBox {
+    display: none;
+    margin-top: 24px;
+    padding: 16px;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  #fallbackImg {
+    width: 160px;
+    height: 160px;
+    margin-top: 10px;
+    border-radius: 28px;
   }
 </style>
 </head>
@@ -31,6 +49,12 @@
   <canvas id="preview" width="192" height="192" style="border-radius:36px;box-shadow:0 8px 20px rgba(0,0,0,.15);"></canvas>
   <button onclick="downloadIcon(192, 'icon-192.png')">Download icon-192.png</button>
   <button onclick="downloadIcon(512, 'icon-512.png')">Download icon-512.png</button>
+
+  <!-- Fallback for in-app browsers / WebViews that block auto-download -->
+  <div id="fallbackBox">
+    <p id="fallbackText" style="font-size:14px;color:#333;margin:0;"></p>
+    <img id="fallbackImg" alt="Generated Icon" />
+  </div>
 
 <script>
 function drawIcon(canvas, size) {
@@ -70,16 +94,24 @@ drawIcon(document.getElementById("preview"), 192);
 function downloadIcon(size, filename) {
   const c = document.createElement("canvas");
   drawIcon(c, size);
-  c.toBlob((blob) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, "image/png");
+
+  const dataUrl = c.toDataURL("image/png");
+
+  // 1. Standard browser download
+  const a = document.createElement("a");
+  a.href = dataUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  // 2. Show image below so you can long-press -> Save Image if your app blocks downloads
+  const box = document.getElementById("fallbackBox");
+  const img = document.getElementById("fallbackImg");
+  const txt = document.getElementById("fallbackText");
+  txt.textContent = "If download didn't start, long-press (or right-click) the image below to save " + filename + ":";
+  img.src = dataUrl;
+  box.style.display = "block";
 }
 </script>
 </body>
