@@ -924,7 +924,28 @@ function flipBack(event) {
 
 function speakText(text, lang = "en-IN") {
 
-  let androidSpoken = false;
+  /*
+   * For phonics, use the browser speech engine directly.
+   * AndroidTTS may speak a sentence differently depending on the
+   * host voice, and we need the phonics button to be deterministic
+   * in the web app.
+   */
+  if ("speechSynthesis" in window) {
+
+    speechSynthesis.cancel();
+
+    const speech =
+      new SpeechSynthesisUtterance(text);
+
+    speech.lang = lang;
+    speech.rate = 0.72;
+    speech.pitch = 1.0;
+    speech.volume = 1.0;
+
+    speechSynthesis.speak(speech);
+    return true;
+
+  }
 
   if (
     window.AndroidTTS &&
@@ -933,38 +954,17 @@ function speakText(text, lang = "en-IN") {
 
     try {
       window.AndroidTTS.speak(text);
-      androidSpoken = true;
+      return true;
     } catch (error) {
-      androidSpoken = false;
+      // Continue to the visible failure message below.
     }
 
   }
 
-  /*
-   * GitHub Pages/browser fallback.
-   * Do not stop here just because an Android bridge exists:
-   * a bridge can be present but unavailable to the current page.
-   */
-  if ("speechSynthesis" in window && !androidSpoken) {
+  document.getElementById("message").textContent =
+    "⚠️ Voice is not available in this browser.";
 
-    speechSynthesis.cancel();
-
-    const speech =
-      new SpeechSynthesisUtterance(text);
-
-    speech.lang = lang;
-    speech.rate = 0.8;
-
-    speechSynthesis.speak(speech);
-
-  }
-
-  if (!androidSpoken && !("speechSynthesis" in window)) {
-
-    document.getElementById("message").textContent =
-      "⚠️ Voice is not available in this browser.";
-
-  }
+  return false;
 
 }
 
