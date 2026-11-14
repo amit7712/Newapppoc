@@ -1,0 +1,73 @@
+# Project Plan — Alphabet Flipper
+
+## Goal
+Build a polished, child-friendly Alphabet Flipper learning app from the existing `index.html`, while keeping the experience simple, playful, mobile-first, and easy for a child to use.
+
+## Phase 1 — Current baseline and code cleanup
+- Review the existing `index.html` and preserve the working core flow.
+- Keep the current 52-card model: A–Z capital letters plus a–z small letters.
+- Keep random card selection rather than alphabetical A→B→C progression.
+- Verify the existing flip interaction, progress tracking, Repeat setting, and three sound buttons.
+- Remove dead or unused interaction code where safe.
+- Keep the implementation lightweight and browser-friendly.
+
+## Phase 2 — Learning experience
+- Improve the card reveal experience for children.
+- Make the letter, picture, word, phonics, and example text visually clear.
+- Make the three audio actions clearly distinguishable:
+  - Letter sound
+  - Word sound
+  - Phonics sound
+- Improve feedback after each interaction.
+- Prevent accidental double-actions during card transitions.
+
+## Phase 3 — Randomisation and learning flow
+- Keep Capital and Small letters as separate learning cards.
+- Ensure random selection does not immediately repeat the same card when alternatives exist.
+- Keep the Repeat ON/OFF behavior predictable.
+- Make progress information accurate and easy to understand.
+- Handle the end of a non-repeat cycle cleanly.
+
+## Phase 4 — Child-friendly UI/UX
+- Refine typography, spacing, buttons, animations, and visual hierarchy.
+- Keep the interface mobile-first and touch-friendly.
+- Make controls large enough for children.
+- Maintain accessible contrast and readable text.
+- Keep the playful visual style without making the screen unnecessarily complex.
+
+## Phase 5 — Audio and platform compatibility
+- Improve speech behavior where browser support allows.
+- Preserve the existing Android TTS integration when available.
+- Provide a sensible browser speech fallback.
+- Avoid breaking the app when speech APIs are unavailable.
+
+## Phase 6 — PWA and offline readiness
+- Verify the manifest, icon references, and service-worker registration.
+- Check that the app can load reliably as a standalone/mobile experience.
+- Fix only the PWA issues that are actually present in the repository.
+- Keep offline behavior lightweight and dependable.
+
+## Phase 7 — Quality assurance
+- Test Start Learning.
+- Test capital and small letter cards.
+- Test card flipping and random replacement.
+- Test Repeat ON and Repeat OFF.
+- Test progress tracking.
+- Test Letter, Word, and Phonics buttons.
+- Test Home and Settings navigation.
+- Test on a narrow mobile viewport and a desktop browser.
+- Fix regressions before each milestone is considered complete.
+
+## Phase 8 — Documentation and release discipline
+- Maintain `commit.md` as the chronological commit record.
+- For every change, record:
+  - Commit ID
+  - Commit message
+  - What was done
+  - Files changed
+  - User instruction/request that caused the change
+- Keep this `plan.md` updated when the project scope or phases materially change.
+- Keep `README.md` aligned with the actual implemented features.
+
+## Working rule
+Implement one meaningful phase or focused change at a time, test it, then commit it. Do not make unrelated changes in the same commit.
