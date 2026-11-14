@@ -79,3 +79,23 @@ For every future commit, add one entry here with:
 - Files changed: index.html
 - User instruction: Check the phonics issue directly rather than asking the user to test the branch themselves.
 - Testing status: Code-level verification completed; actual device audio still needs runtime verification.
+
+
+## 3cb45e8dd4fa0347ad753038e33a270c0d8f5b5b
+- Message: `feat: improve learning interaction accessibility and feedback`
+- What we did: Added keyboard activation for the learning card, visible focus states, accessible labels for the three sound buttons, and live status feedback for Letter, Word, and Phonics actions. Existing transition locking was preserved.
+- Files changed: `index.html`
+- User instruction: Continue the remaining project work autonomously after the initial phonics investigation and keep the phase-based structure.
+- Testing status: Code review completed; runtime/device verification remains part of the phase QA.
+
+## f33a8730e6c8f535f91fedfccf3177cbb5a9c486
+- Message: `docs: update phase status after learning interaction work`
+- What we did: Marked Phase 1 ready for runtime verification and Phase 2 in progress; recorded the learning-interaction improvements.
+- Files changed: `.project/plan.md`
+- User instruction: Maintain the project plan as work progresses.
+
+## c8a65b174d11ba518855947ea5a1489052d2cbf2
+- Message: `docs: update project summary for phase 2 work`
+- What we did: Updated the persistent summary with the current Phase 2 state and completed learning-interaction improvements.
+- Files changed: `.project/summary.md`
+- User instruction: Keep a readable persistent project state so the work can continue without repeatedly restating context.
