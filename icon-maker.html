@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Download App Icons</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 40px 20px;
+    background: #f5f7ff;
+  }
+  button {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    margin: 14px auto;
+    padding: 16px;
+    border: 0;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    background: linear-gradient(135deg, #6C63FF, #FF5CA8);
+  }
+</style>
+</head>
+<body>
+  <h2>ABC Flipper PNG Icon Maker</h2>
+  <canvas id="preview" width="192" height="192" style="border-radius:36px;box-shadow:0 8px 20px rgba(0,0,0,.15);"></canvas>
+  <button onclick="downloadIcon(192, 'icon-192.png')">Download icon-192.png</button>
+  <button onclick="downloadIcon(512, 'icon-512.png')">Download icon-512.png</button>
+
+<script>
+function drawIcon(canvas, size) {
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+
+  const grad = ctx.createLinearGradient(0, 0, size, size);
+  grad.addColorStop(0, "#6C63FF");
+  grad.addColorStop(0.5, "#9B5CFF");
+  grad.addColorStop(1, "#FF5CA8");
+
+  const r = size * 0.22;
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.arcTo(size, 0, size, size, r);
+  ctx.arcTo(size, size, 0, size, r);
+  ctx.arcTo(0, size, 0, 0, r);
+  ctx.arcTo(0, 0, size, 0, r);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "900 " + Math.round(size * 0.34) + "px Arial, sans-serif";
+  ctx.fillText("ABC", size / 2, size * 0.45);
+
+  ctx.font = "bold " + Math.round(size * 0.13) + "px Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  ctx.fillText("FLIPPER", size / 2, size * 0.72);
+}
+
+drawIcon(document.getElementById("preview"), 192);
+
+function downloadIcon(size, filename) {
+  const c = document.createElement("canvas");
+  drawIcon(c, size);
+  c.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, "image/png");
+}
+</script>
+</body>
+</html>
