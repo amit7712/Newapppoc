@@ -15,9 +15,15 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import ExtensionIcon from "@mui/icons-material/Extension";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import StarIcon from "@mui/icons-material/Star";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
+import LocalLibraryIcon from "@mui/icons-material/LocalLibrary";
+import CelebrationIcon from "@mui/icons-material/Celebration";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { alphabet, PHONICS_SOUNDS } from "./alphabet.js";
 
-const defaults = { repeat: true, order: "random", autoVoice: false, speed: 0.7 };
+const defaults = { repeat: false, order: "random", autoVoice: false, speed: 0.7 };
 
 const loadSettings = () => {
   try { return { ...defaults, ...JSON.parse(localStorage.getItem("af-settings") || "{}") }; }
@@ -31,6 +37,7 @@ export default function App() {
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [visited, setVisited] = useState(new Set());
+  const [used, setUsed] = useState(new Set());
 
   useEffect(() => localStorage.setItem("af-settings", JSON.stringify(settings)), [settings]);
 
@@ -60,13 +67,24 @@ export default function App() {
   };
 
   const next = () => {
+    let pool = cards.map((_, i) => i);
+    if (!settings.repeat) pool = pool.filter(i => !used.has(i));
+    if (!pool.length) {
+      setUsed(new Set());
+      pool = cards.map((_, i) => i);
+    }
+    if (pool.length > 1) pool = pool.filter(i => i !== index);
+    const nextIndex = settings.order === "series"
+      ? (index + 1) % cards.length
+      : pool[Math.floor(Math.random() * pool.length)];
+    setIndex(nextIndex);
+    if (!settings.repeat) setUsed(old => new Set([...old, nextIndex]));
     setFlipped(false);
-    setIndex(old => settings.order === "random"
-      ? Math.floor(Math.random() * cards.length)
-      : (old + 1) % cards.length);
   };
 
   const start = () => {
+    setVisited(new Set());
+    setUsed(new Set());
     setIndex(settings.order === "random" ? Math.floor(Math.random() * cards.length) : 0);
     setFlipped(false);
     setScreen("learn");
@@ -76,26 +94,55 @@ export default function App() {
     return (
       <Box sx={pageSx}>
         <Header onSettings={() => setSettingsOpen(true)} />
-        <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
-          <Box sx={heroSx}>
-            <Box className="hero-orb orb-one" /><Box className="hero-orb orb-two" />
-            <Chip icon={<AutoAwesomeIcon />} label="LEARN • PLAY • DISCOVER" color="secondary" sx={{ fontWeight: 950, mb: 1.5 }} />
-            <Typography sx={{ fontSize: { xs: 42, sm: 58, md: 72 }, lineHeight: .98, fontWeight: 950, letterSpacing: -2 }}>
-              Welcome to <Box component="span" sx={{ color: "primary.main" }}>Alphabet Flipper</Box>! 🚀
-            </Typography>
-            <Typography sx={{ mt: 1.5, maxWidth: 680, fontSize: { xs: 16, md: 20 }, color: "text.secondary", fontWeight: 700 }}>
-              Flip, listen, match and learn letters through playful mini-games.
-            </Typography>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} mt={2.5}>
-              <Button size="large" variant="contained" onClick={start} startIcon={<PlayArrowIcon />} sx={primaryButtonSx}>Start Learning</Button>
-              <Button size="large" variant="outlined" onClick={() => setScreen("games")} startIcon={<ExtensionIcon />} sx={{ ...primaryButtonSx, mt: { xs: 0, sm: 3 } }}>Explore Games</Button>
+        <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
+          <Box sx={homeHero}>
+            <Box className="bubble bubble-a" /><Box className="bubble bubble-b" /><Box className="bubble bubble-c" />
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ position: "relative", zIndex: 1 }}>
+              <Chip icon={<StarIcon />} label="Little Learner" sx={{ bgcolor: "rgba(255,255,255,.82)", fontWeight: 950 }} />
+              <Chip label={`⭐ ${visited.size} letters`} sx={{ bgcolor: "rgba(255,255,255,.82)", fontWeight: 950 }} />
             </Stack>
+            <Box sx={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: { xs: "1fr", md: "1.35fr .65fr" }, alignItems: "center", gap: 2, mt: 2 }}>
+              <Box>
+                <Typography sx={{ fontSize: { xs: 40, sm: 52, md: 68 }, lineHeight: .98, fontWeight: 1000, color: "#18213d" }}>
+                  Learn letters.<br /><Box component="span" sx={{ color: "#6C63FF" }}>Play &amp; grow!</Box> 🚀
+                </Typography>
+                <Typography sx={{ mt: 1.5, maxWidth: 610, color: "#58627c", fontWeight: 750, fontSize: { xs: 16, md: 19 } }}>
+                  Flip, listen, discover words and collect stars while you learn ABC.
+                </Typography>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} sx={{ mt: 2.5 }}>
+                  <Button size="large" variant="contained" onClick={start} startIcon={<PlayArrowIcon />} sx={mainBtn}>Start Learning</Button>
+                  <Button size="large" variant="outlined" onClick={() => setScreen("games")} startIcon={<ExtensionIcon />} sx={secondaryBtn}>Play Games</Button>
+                </Stack>
+              </Box>
+              <Box className="mascot-card">
+                <Box className="mascot">🦊</Box>
+                <Typography fontWeight={1000} sx={{ color: "#18213d" }}>Hi, little learner!</Typography>
+                <Typography variant="body2" sx={{ color: "#66708b", fontWeight: 700 }}>Ready for today's ABC adventure?</Typography>
+                <Box className="sparkle">✨</Box>
+              </Box>
+            </Box>
           </Box>
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3,1fr)" }, gap: 2, mt: 3 }}>
-            <FeatureButton icon={<ExtensionIcon />} title="Games" text="Tap to explore letter games." onClick={() => setScreen("games")} />
-            <FeatureButton icon={<AssignmentIcon />} title="Worksheets" text="Practice printable activities." onClick={() => setScreen("worksheets")} />
-            <FeatureButton icon={<CheckCircleIcon />} title="Progress" text={"Explore " + visited.size + " of " + cards.length + " letters."} onClick={() => setScreen("progress")} />
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 3, mb: 1.2 }}>
+            <Typography variant="h5" fontWeight={1000}>What do you want to do?</Typography>
+            <Chip label="Tap to explore" size="small" sx={{ fontWeight: 900 }} />
+          </Stack>
+          <Box sx={tileGrid}>
+            <HomeTile emoji="🎮" title="Games" subtitle="Learn by playing" tone="#e9e7ff" onClick={() => setScreen("games")} />
+            <HomeTile emoji="📝" title="Worksheets" subtitle="Practice & print" tone="#fff0d9" onClick={() => setScreen("worksheets")} />
+            <HomeTile emoji="⭐" title="My Progress" subtitle={`${visited.size}/${cards.length} letters explored`} tone="#e2f8ec" onClick={() => setScreen("progress")} />
+            <HomeTile emoji="📚" title="Alphabet" subtitle="A to Z adventure" tone="#e5f3ff" onClick={start} />
           </Box>
+          <Paper sx={{ mt: 3, p: 2.2, borderRadius: 5, bgcolor: "#fff", border: "1px solid #ececf5", boxShadow: "0 12px 36px rgba(42,49,93,.07)" }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Box className="reward-icon">🏆</Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography fontWeight={1000}>Today's learning goal</Typography>
+                <Typography variant="body2" color="text.secondary" fontWeight={650}>Explore 5 letters and hear their sounds.</Typography>
+                <LinearProgress variant="determinate" value={Math.min((visited.size / 5) * 100, 100)} sx={{ mt: 1, height: 9, borderRadius: 9 }} />
+              </Box>
+              <Typography fontWeight={1000} color="primary.main">{Math.min(visited.size, 5)}/5</Typography>
+            </Stack>
+          </Paper>
         </Container>
         <Settings open={settingsOpen} close={() => setSettingsOpen(false)} settings={settings} setSettings={setSettings} />
       </Box>
@@ -171,17 +218,20 @@ export default function App() {
   );
 }
 
-function FeatureButton({ icon, title, text, onClick }) {
-  return <Paper onClick={onClick} sx={{ p: 2.4, borderRadius: 4, minHeight: 145, cursor: "pointer", transition: "transform .2s, box-shadow .2s", "&:hover": { transform: "translateY(-5px)", boxShadow: "0 16px 40px rgba(60,65,120,.15)" } }}>
-    <Box sx={{ color: "primary.main", mb: .8 }}>{icon}</Box>
-    <Typography fontWeight={950}>{title}</Typography>
-    <Typography variant="body2" color="text.secondary">{text}</Typography>
+function HomeTile({ emoji, title, subtitle, tone, onClick }) {
+  return <Paper className="home-tile" onClick={onClick} sx={{ bgcolor: tone }}>
+    <Box className="tile-emoji">{emoji}</Box>
+    <Box sx={{ flex: 1 }}>
+      <Typography fontWeight={1000} fontSize={20}>{title}</Typography>
+      <Typography variant="body2" sx={{ color: "#626b83", fontWeight: 700 }}>{subtitle}</Typography>
+    </Box>
+    <Box className="tile-arrow"><ArrowForwardIcon /></Box>
   </Paper>;
 }
 
 function Games({ onBack, onStart }) {
-  return <Box sx={pageSx}><Header back={onBack} onSettings={() => {}} /><Container maxWidth="md" sx={{ py: 5 }}>
-    <Typography variant="h3" fontWeight={950}>🎮 Games</Typography>
+  return <Box sx={pageSx}><Header back={onBack} onSettings={() => {}} /><Container maxWidth="md" sx={{ py: 4 }}>
+    <Chip icon={<ExtensionIcon />} label="PLAY ZONE" sx={{ fontWeight: 950 }} />\n    <Typography variant="h3" fontWeight={1000} sx={{ mt: 1 }}>🎮 Games</Typography>
     <Typography color="text.secondary" sx={{ mb: 3 }}>Choose a game and start learning.</Typography>
     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2,1fr)" }, gap: 2 }}>
       <FeatureButton icon={<PlayArrowIcon />} title="Alphabet Flipper" text="Flip letters, discover words and hear sounds." onClick={onStart} />
@@ -190,9 +240,21 @@ function Games({ onBack, onStart }) {
   </Container></Box>;
 }
 
+function GameCard({ emoji, title, subtitle, color, onClick, live }) {
+  return <Paper className="game-card" onClick={onClick} sx={{ bgcolor: color }}>
+    {live && <Chip label="PLAY NOW" size="small" color="secondary" sx={{ position: "absolute", top: 14, right: 14, fontWeight: 1000 }} />}
+    <Box className="game-emoji">{emoji}</Box>
+    <Typography fontWeight={1000} fontSize={21}>{title}</Typography>
+    <Typography color="text.secondary" fontWeight={700}>{subtitle}</Typography>
+    <Button variant="contained" endIcon={<ArrowForwardIcon />} sx={{ mt: 2, borderRadius: 3, fontWeight: 950 }} onClick={e => { e.stopPropagation(); onClick(); }}>
+      {live ? "Start" : "Try demo"}
+    </Button>
+  </Paper>;
+}
+
 function Worksheets({ onBack }) {
   return <Box sx={pageSx}><Header back={onBack} onSettings={() => {}} /><Container maxWidth="md" sx={{ py: 5 }}>
-    <Typography variant="h3" fontWeight={950}>📝 Worksheets</Typography>
+    <Chip icon={<AssignmentIcon />} label="PRACTICE ZONE" sx={{ fontWeight: 950 }} />\n    <Typography variant="h3" fontWeight={1000} sx={{ mt: 1 }}>📝 Worksheets</Typography>
     <Typography color="text.secondary" sx={{ mb: 3 }}>Practice letters with simple printable activities.</Typography>
     <Paper sx={{ p: 3, borderRadius: 4 }}>
       <Typography fontWeight={950}>Random Worksheet</Typography>
@@ -205,7 +267,7 @@ function Worksheets({ onBack }) {
 function Progress({ onBack, visited, total }) {
   const pct = total ? Math.round((visited / total) * 100) : 0;
   return <Box sx={pageSx}><Header back={onBack} onSettings={() => {}} /><Container maxWidth="md" sx={{ py: 5 }}>
-    <Typography variant="h3" fontWeight={950}>⭐ Progress</Typography>
+    <Chip icon={<EmojiEventsIcon />} label="MY JOURNEY" sx={{ fontWeight: 950 }} />\n    <Typography variant="h3" fontWeight={1000} sx={{ mt: 1 }}>⭐ Progress</Typography>
     <Paper sx={{ p: 3, borderRadius: 4, mt: 2 }}>
       <Typography fontWeight={950}>Your learning journey</Typography>
       <Typography sx={{ mt: 1 }}>{visited} of {total} letters explored</Typography>
