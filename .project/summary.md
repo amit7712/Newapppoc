@@ -27,6 +27,8 @@
 - Added visible focus states for interactive controls.
 - Added accessible labels to the three sound buttons.
 - Added live status feedback for Letter, Word, and Phonics actions.
+- Hardened speech feedback with start, finish, and error handling; device TTS remains a fallback when browser speech fails.
+- Hardened touch interaction with `touch-action: manipulation`.
 - Kept the existing transition lock so rapid taps do not trigger overlapping card changes.
 
 ### Phonics sound fix
@@ -36,9 +38,9 @@
 - The phonics button also updates the on-screen message with the phonics sound.
 
 ## Next
-1. Complete Phase 1 runtime/device verification.
+1. Complete runtime/device verification for the current Phase 1/2 audio path.
 2. Finish Phase 2 learning interaction polish.
-3. Validate randomisation/progress behavior in Phase 3.
+3. Move into Phase 3 randomisation/progress validation.
 4. Complete child-friendly UI/UX improvements.
 5. Verify audio and PWA behavior.
 6. Run the full QA checklist.
