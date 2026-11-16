@@ -18,7 +18,11 @@ button{touch-action:manipulation}
 
 /* Kids app geometry: structured panels, soft corners, fewer pill shapes */
 .home-hero{
-  border-radius:28px!important;
+  border-radius:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
 }
 .MuiButton-root{border-radius:14px!important}
 .MuiChip-root{border-radius:10px!important}
@@ -29,9 +33,9 @@ button{touch-action:manipulation}
   position:relative;
   display:flex;
   align-items:center;
-  gap:16px;
-  padding:18px 20px;
-  min-height:112px;
+  gap:14px;
+  padding:18px 18px;
+  min-height:108px;
   border-radius:18px!important;
   border:2px solid rgba(32,36,58,.06)!important;
   cursor:pointer;
@@ -138,9 +142,27 @@ button{touch-action:manipulation}
   .home-tile,.game-card{transition:none}
 }
 @media (max-width:600px){
-  .home-tile{min-height:96px;padding:15px 16px;border-radius:16px!important}
+  .home-tile{min-height:92px;padding:13px 12px;border-radius:16px!important}
+  .home-tile .tile-emoji{width:46px;height:46px;flex-basis:46px;font-size:25px;border-radius:14px}
+  .home-tile .tile-arrow{width:28px;height:28px;flex-basis:28px;border-radius:9px}
+  .home-tile .tile-arrow svg{font-size:18px}
+  .home-tile .MuiTypography-root{line-height:1.12}
+  .home-tile .MuiTypography-h6{font-size:17px}
   .tile-emoji{width:52px;height:52px;flex-basis:52px;border-radius:16px;font-size:29px}
   .mascot-card{min-height:215px;border-radius:20px}
   .mascot{font-size:88px}
   .flip-face{border-radius:20px!important}
+}
+/* Mobile dashboard: no giant enclosing blob; content reads as a clean learning screen */
+@media (max-width:600px){
+  .home-hero + *{margin-top:18px!important}
+  .home-hero .MuiChip-root{font-size:13px;height:34px}
+  .home-hero .mascot-card{
+    min-height:190px;
+    margin-top:16px;
+    padding:18px 14px;
+    border-radius:18px;
+  }
+  .home-hero .mascot{font-size:76px}
+  .home-hero .sparkle{right:16px;top:12px}
 }
