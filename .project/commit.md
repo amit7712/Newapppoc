@@ -119,3 +119,11 @@ For every future commit, add one entry here with:
 - What we did: Updated the persistent project state with speech feedback, touch hardening, and the next QA steps.
 - Files changed: `.project/summary.md`
 - User instruction: Continue the project work and maintain the persistent project summary.
+
+
+## 644cef0c3512806c528bb49495dfd4ba2de0b444
+- Message: `feat: expand child-friendly learning settings`
+- What we did: Expanded the Settings panel with Repeat, Random/A→Z learning order, Auto Voice, and adjustable voice speed. Improved the settings presentation into simple child-friendly cards while preserving the existing 52-card learning model and sound controls.
+- Files changed: `index.html`
+- User instruction: Continue repository work autonomously, keep performing QA, and build a stable, polished, child-friendly app with useful settings and strong UI/UX.
+- Testing status: Static code checks completed for settings handlers, random/series selection, auto-voice reveal, and voice-speed integration; runtime/device QA remains required.
