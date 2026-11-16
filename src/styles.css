@@ -166,3 +166,114 @@ button{touch-action:manipulation}
   .home-hero .mascot{font-size:76px}
   .home-hero .sparkle{right:16px;top:12px}
 }
+
+/* Brand / logo */
+.brand{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:0;
+}
+.brand-logo{
+  width:32px;
+  height:32px;
+  display:block;
+  flex:0 0 32px;
+}
+.brand-name{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-size:20px!important;
+}
+
+/* Responsive foundation */
+html{
+  width:100%;
+  overflow-x:hidden;
+}
+body,#root{
+  width:100%;
+  max-width:100%;
+  overflow-x:hidden;
+}
+img,svg{
+  max-width:100%;
+}
+.MuiContainer-root{
+  width:100%;
+}
+.learn-container{
+  width:100%;
+}
+.flip-scene{
+  width:100%;
+  min-width:0;
+}
+.flip-card{
+  width:100%;
+  min-width:0;
+  height:clamp(360px,58vw,450px);
+  min-height:360px;
+  max-height:450px;
+}
+.flip-face{
+  width:100%;
+  height:100%;
+}
+.card-face-content{
+  min-height:0!important;
+}
+
+/* Keep the learning screen proportional when browser switches viewport modes */
+@media (max-width:900px){
+  .learn-container{
+    max-width:620px!important;
+  }
+}
+@media (max-width:600px){
+  .MuiToolbar-root{
+    min-height:58px!important;
+    padding-left:12px!important;
+    padding-right:12px!important;
+  }
+  .brand-logo{
+    width:29px;
+    height:29px;
+    flex-basis:29px;
+  }
+  .brand-name{
+    font-size:18px!important;
+  }
+  .learn-container{
+    padding-left:16px!important;
+    padding-right:16px!important;
+    max-width:none!important;
+  }
+  .flip-scene{
+    min-height:0;
+  }
+  .flip-card{
+    height:clamp(350px,112vw,470px);
+    min-height:350px;
+    max-height:470px;
+  }
+  .flip-face{
+    border-radius:20px!important;
+  }
+  .flip-face .MuiCardContent-root{
+    padding:20px!important;
+  }
+}
+@media (min-width:601px){
+  .flip-card{
+    height:450px;
+  }
+}
+@media (orientation:landscape) and (max-height:600px){
+  .flip-card{
+    height:calc(100vh - 170px);
+    min-height:300px;
+    max-height:430px;
+  }
+}
