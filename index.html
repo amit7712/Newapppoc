@@ -440,6 +440,100 @@ h1 {
     padding: 12px 5px;
   }
 }
+
+/* FINAL POLISH */
+body {
+  overscroll-behavior-y: contain;
+}
+.app {
+  padding-bottom: max(28px, env(safe-area-inset-bottom));
+}
+.header {
+  padding: 8px 2px;
+}
+.logo {
+  letter-spacing: -0.3px;
+}
+.settings-btn,
+.back-home,
+.setting-control,
+.toggle,
+.action,
+.primary {
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+.settings-btn:hover,
+.back-home:hover,
+.setting-control:hover {
+  transform: translateY(-1px);
+}
+.settings-btn:active,
+.back-home:active,
+.setting-control:active,
+.action:active,
+.primary:active {
+  transform: scale(.97);
+}
+.settings {
+  border: 1px solid rgba(108,99,255,.08);
+  backdrop-filter: blur(10px);
+}
+.setting-card {
+  border: 1px solid rgba(108,99,255,.06);
+}
+.card-area {
+  touch-action: manipulation;
+}
+.card {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.action {
+  box-shadow: 0 8px 18px rgba(31,41,55,.06);
+}
+.action:hover {
+  box-shadow: 0 10px 22px rgba(31,41,55,.1);
+}
+.message {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 400px) {
+  .header {
+    padding-top: 4px;
+  }
+  .settings {
+    padding: 15px;
+  }
+  .setting-row {
+    align-items: flex-start;
+  }
+  .setting-row > div:last-child {
+    flex-shrink: 0;
+  }
+  .card {
+    height: min(320px, 62vh);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero {
+    animation: none;
+  }
+  .card {
+    transition-duration: .15s;
+  }
+  .settings-btn,
+  .back-home,
+  .setting-control,
+  .toggle,
+  .action,
+  .primary {
+    transition: none;
+  }
+}
+
 </style>
 </head>
 
@@ -729,6 +823,54 @@ let busy = false;
 let needNewOnFlip = false;
 
 
+/* FINAL POLISH HELPERS */
+function saveLearningPreferences() {
+  try {
+    localStorage.setItem("alphabetFlipperPrefs", JSON.stringify({
+      repeat,
+      randomOrder,
+      autoVoice,
+      voiceSpeed
+    }));
+  } catch (error) {
+    // Storage may be unavailable in private or restricted browser contexts.
+  }
+}
+
+function loadLearningPreferences() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("alphabetFlipperPrefs") || "null");
+    if (!saved) return;
+
+    repeat = saved.repeat === true;
+    randomOrder = saved.randomOrder !== false;
+    autoVoice = saved.autoVoice === true;
+    if (typeof saved.voiceSpeed === "number") {
+      voiceSpeed = Math.min(1.1, Math.max(0.4, saved.voiceSpeed));
+    }
+
+    const repeatBtn = document.getElementById("repeatToggle");
+    const orderBtn = document.getElementById("orderToggle");
+    const autoBtn = document.getElementById("autoVoiceToggle");
+    const speed = document.getElementById("speedValue");
+
+    repeatBtn.classList.toggle("on", repeat);
+    repeatBtn.querySelector("span").textContent = repeat ? "ON" : "OFF";
+    orderBtn.textContent = randomOrder ? "Random 🎲" : "A → Z 🔤";
+    autoBtn.classList.toggle("on", autoVoice);
+    autoBtn.querySelector("span").textContent = autoVoice ? "ON" : "OFF";
+    speed.textContent = voiceSpeed.toFixed(1) + "×";
+  } catch (error) {
+    // Use the safe defaults when stored preferences are unavailable or invalid.
+  }
+}
+
+function announceSettingsChange(text) {
+  const message = document.getElementById("message");
+  if (message) message.textContent = text;
+}
+
+
 /* SETTINGS */
 
 function toggleSettings() {
@@ -753,6 +895,7 @@ function toggleOrder() {
   document.getElementById("message").textContent = randomOrder
     ? "🎲 Random order selected."
     : "🔤 A to Z order selected.";
+  saveLearningPreferences();
   used = [];
   totalShown = 0;
   pickNewAlphabet();
@@ -766,12 +909,14 @@ function toggleAutoVoice() {
   document.getElementById("message").textContent = autoVoice
     ? "🔊 Auto Voice ON — words will be spoken after reveal."
     : "🔇 Auto Voice OFF — tap a sound button when you want audio.";
+  saveLearningPreferences();
 }
 
 function changeVoiceSpeed(delta) {
   voiceSpeed = Math.min(1.1, Math.max(0.4, +(voiceSpeed + delta).toFixed(1)));
   document.getElementById("speedValue").textContent = voiceSpeed.toFixed(1) + "×";
   document.getElementById("message").textContent = "🐢 Voice speed: " + voiceSpeed.toFixed(1) + "×";
+  saveLearningPreferences();
 }
 
 function toggleRepeat() {
@@ -809,6 +954,7 @@ function toggleRepeat() {
 
 function startLearning() {
 
+  loadLearningPreferences();
   started = true;
 
   document.getElementById("home").style.display =
