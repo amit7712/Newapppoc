@@ -4,7 +4,7 @@
 - Root structure cleanup completed: root now contains only `index.html` and `README.md`.
 - Repository: `amit7712/Newapppoc`
 - Main app: `index.html`
-- Current phase: Phase 1 — baseline, cleanup, and core fixes
+- Current phase: Phase 2 — learning experience improvements
 - Deployment rule: Do not deploy to GitHub Pages for every change. Deploy only after a stable build passes the agreed test checklist.
 - Commit history: `commit.md`
 - Project plan: `plan.md`
@@ -22,6 +22,15 @@
 - Phonics button issue identified: it was sending the Hindi phonics character directly through the generic speech function using an English voice setting, which can result in no useful phonics pronunciation.
 
 ## Just completed
+### Phase 2 learning interaction improvements
+- Added keyboard activation for the learning card (Enter/Space).
+- Added visible focus states for interactive controls.
+- Added accessible labels to the three sound buttons.
+- Added live status feedback for Letter, Word, and Phonics actions.
+- Hardened speech feedback with start, finish, and error handling; device TTS remains a fallback when browser speech fails.
+- Hardened touch interaction with `touch-action: manipulation`.
+- Kept the existing transition lock so rapid taps do not trigger overlapping card changes.
+
 ### Phonics sound fix
 - Added explicit English phonics sound mappings for A–Z.
 - Phonics button now speaks the displayed letter plus its phonics sound, for example: “A says ah”.
@@ -29,9 +38,9 @@
 - The phonics button also updates the on-screen message with the phonics sound.
 
 ## Next
-1. Complete Phase 1 static/runtime checks.
-2. Review and improve the learning interaction in Phase 2.
-3. Validate randomisation/progress behavior in Phase 3.
+1. Complete runtime/device verification for the current Phase 1/2 audio path.
+2. Finish Phase 2 learning interaction polish.
+3. Move into Phase 3 randomisation/progress validation.
 4. Complete child-friendly UI/UX improvements.
 5. Verify audio and PWA behavior.
 6. Run the full QA checklist.

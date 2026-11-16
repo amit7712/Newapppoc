@@ -30,6 +30,7 @@ body {
 button {
   font-family: inherit;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .app {
@@ -285,6 +286,20 @@ h1 {
   transform: scale(.96);
 }
 
+.action:focus-visible,
+.back-home:focus-visible,
+.settings-btn:focus-visible,
+.primary:focus-visible,
+.toggle:focus-visible {
+  outline: 3px solid rgba(108,99,255,.45);
+  outline-offset: 3px;
+}
+
+.card:focus-visible {
+  outline: 4px solid rgba(108,99,255,.45);
+  outline-offset: 5px;
+}
+
 .message {
   margin-top: 14px;
   padding: 13px;
@@ -478,7 +493,11 @@ h1 {
       <div
         id="card"
         class="card"
-        onclick="flipCard()">
+        role="button"
+        tabindex="0"
+        aria-label="Flip the alphabet learning card"
+        onclick="flipCard()"
+        onkeydown="handleCardKeydown(event)">
 
         <div class="face front">
 
@@ -541,7 +560,9 @@ h1 {
     <div class="actions">
 
       <button
+        type="button"
         class="action letter-sound"
+        aria-label="Play the letter sound"
         onclick="playLetterSound(event)">
 
         🔤<br>
@@ -550,7 +571,9 @@ h1 {
       </button>
 
       <button
+        type="button"
         class="action word-sound"
+        aria-label="Play the word"
         onclick="playWordSound(event)">
 
         🖼️<br>
@@ -559,7 +582,9 @@ h1 {
       </button>
 
       <button
+        type="button"
         class="action phonics-sound"
+        aria-label="Play the phonics sound"
         onclick="playPhonicsSound(event)">
 
         🔊<br>
@@ -569,7 +594,7 @@ h1 {
 
     </div>
 
-    <div id="message" class="message">
+    <div id="message" class="message" role="status" aria-live="polite">
 
       🎯 Tap the card to reveal the alphabet.
 
@@ -903,6 +928,16 @@ function flipCard() {
 }
 
 
+/* KEYBOARD CARD ACCESS */
+
+function handleCardKeydown(event) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    flipCard();
+  }
+}
+
+
 /* FLIP BACK */
 
 function flipBack(event) {
@@ -924,26 +959,53 @@ function flipBack(event) {
 
 function speakText(text, lang = "en-IN") {
 
-  /*
-   * For phonics, use the browser speech engine directly.
-   * AndroidTTS may speak a sentence differently depending on the
-   * host voice, and we need the phonics button to be deterministic
-   * in the web app.
-   */
+  const message = document.getElementById("message");
+
   if ("speechSynthesis" in window) {
 
-    speechSynthesis.cancel();
+    try {
+      speechSynthesis.cancel();
 
-    const speech =
-      new SpeechSynthesisUtterance(text);
+      const speech =
+        new SpeechSynthesisUtterance(text);
 
-    speech.lang = lang;
-    speech.rate = 0.72;
-    speech.pitch = 1.0;
-    speech.volume = 1.0;
+      speech.lang = lang;
+      speech.rate = 0.72;
+      speech.pitch = 1.0;
+      speech.volume = 1.0;
 
-    speechSynthesis.speak(speech);
-    return true;
+      speech.onstart = () => {
+        message.textContent = "🔊 Playing: " + text;
+      };
+
+      speech.onend = () => {
+        message.textContent = "✅ Finished: " + text;
+      };
+
+      speech.onerror = () => {
+        if (
+          window.AndroidTTS &&
+          typeof window.AndroidTTS.speak === "function"
+        ) {
+          try {
+            window.AndroidTTS.speak(text);
+            message.textContent = "🔊 Playing with device voice: " + text;
+            return;
+          } catch (error) {
+            // Fall through to the visible failure message.
+          }
+        }
+
+        message.textContent =
+          "⚠️ Voice could not play. Try tapping the button again.";
+      };
+
+      speechSynthesis.speak(speech);
+      return true;
+
+    } catch (error) {
+      // Continue to Android TTS fallback below.
+    }
 
   }
 
@@ -954,6 +1016,7 @@ function speakText(text, lang = "en-IN") {
 
     try {
       window.AndroidTTS.speak(text);
+      message.textContent = "🔊 Playing with device voice: " + text;
       return true;
     } catch (error) {
       // Continue to the visible failure message below.
@@ -961,7 +1024,7 @@ function speakText(text, lang = "en-IN") {
 
   }
 
-  document.getElementById("message").textContent =
+  message.textContent =
     "⚠️ Voice is not available in this browser.";
 
   return false;
@@ -988,7 +1051,12 @@ function playLetterSound(event) {
       ? item[1]
       : item[0];
 
-  speakText(shownLetter);
+  const played = speakText(shownLetter);
+
+  document.getElementById("message").textContent =
+    played
+      ? "🔊 Letter: " + shownLetter
+      : "⚠️ Letter sound is not available.";
 
 }
 
@@ -1007,7 +1075,12 @@ function playWordSound(event) {
   const item =
     alphabet[letterIndex];
 
-  speakText(item[3]);
+  const played = speakText(item[3]);
+
+  document.getElementById("message").textContent =
+    played
+      ? "🖼️ Word: " + item[3]
+      : "⚠️ Word sound is not available.";
 
 }
 
@@ -1066,12 +1139,13 @@ function playPhonicsSound(event) {
   const phonics =
     PHONICS_SOUNDS[shownLetter.toUpperCase()];
 
-  if (!phonics) return;
+  if (!phonics) {
+    document.getElementById("message").textContent =
+      "⚠️ Phonics mapping is not available for this letter.";
+    return;
+  }
 
   speakText(phonics, "en-US");
-
-  document.getElementById("message").textContent =
-    "🔊 Phonics: " + phonics;
 }
 
 
