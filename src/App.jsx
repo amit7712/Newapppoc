@@ -359,7 +359,7 @@ function Header({ back, onSettings }) {
       <Toolbar sx={{ maxWidth: 900, width: "100%", mx: "auto" }}>
         {back && <IconButton onClick={back} aria-label="Back"><ArrowBackIcon /></IconButton>}
         <Box className="brand" sx={{ flex: 1 }}>
-  <img className="brand-logo" src="/logo.svg" alt="Alphabet Flipper" />
+  <img className="brand-logo" src={`${import.meta.env.BASE_URL}logo.svg`} alt="Alphabet Flipper" />
   <Typography fontWeight={950} className="brand-name">Alphabet Flipper</Typography>
 </Box>
         <IconButton onClick={onSettings} aria-label="Settings"><SettingsIcon /></IconButton>
