@@ -316,8 +316,59 @@ h1 {
   margin-top: 18px;
   background: white;
   padding: 18px;
-  border-radius: 22px;
+  border-radius: 24px;
   box-shadow: 0 10px 30px rgba(0,0,0,.08);
+}
+
+.settings-title {
+  font-size: 18px;
+  font-weight: 900;
+  margin-bottom: 14px;
+}
+
+.settings-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.setting-card {
+  background: #f8f7ff;
+  border-radius: 18px;
+  padding: 13px;
+}
+
+.setting-card .setting-row {
+  gap: 12px;
+}
+
+.setting-control {
+  min-width: 108px;
+  border: 0;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: white;
+  color: #4f46b8;
+  font-weight: 900;
+}
+
+.setting-control:focus-visible {
+  outline: 3px solid rgba(108,99,255,.35);
+  outline-offset: 2px;
+}
+
+.speed-value {
+  display: inline-block;
+  min-width: 42px;
+  text-align: center;
+  font-weight: 900;
+  color: #654cff;
+}
+
+.settings-note {
+  margin-top: 12px;
+  color: #667085;
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 .setting-row {
@@ -411,28 +462,55 @@ h1 {
 
   <div id="settings" class="settings">
 
-    <div class="setting-row">
+    <div class="settings-title">⚙️ Learning Settings</div>
 
-      <div>
-        <div class="setting-title">
-          🔁 Repeat Alphabets
-        </div>
-
-        <div class="setting-desc">
-          Allow an alphabet to appear again
+    <div class="settings-grid">
+      <div class="setting-card">
+        <div class="setting-row">
+          <div>
+            <div class="setting-title">🔁 Repeat Alphabets</div>
+            <div class="setting-desc">Allow a letter to appear again</div>
+          </div>
+          <button id="repeatToggle" class="toggle" onclick="toggleRepeat()" aria-label="Toggle repeat alphabets"><span>OFF</span></button>
         </div>
       </div>
 
-      <button
-        id="repeatToggle"
-        class="toggle"
-        onclick="toggleRepeat()">
+      <div class="setting-card">
+        <div class="setting-row">
+          <div>
+            <div class="setting-title">🎲 Learning Order</div>
+            <div class="setting-desc">Choose random or A to Z order</div>
+          </div>
+          <button id="orderToggle" class="setting-control" onclick="toggleOrder()" aria-label="Change learning order">Random 🎲</button>
+        </div>
+      </div>
 
-        <span>OFF</span>
+      <div class="setting-card">
+        <div class="setting-row">
+          <div>
+            <div class="setting-title">🔊 Auto Voice</div>
+            <div class="setting-desc">Speak the word after revealing</div>
+          </div>
+          <button id="autoVoiceToggle" class="toggle" onclick="toggleAutoVoice()" aria-label="Toggle automatic voice"><span>OFF</span></button>
+        </div>
+      </div>
 
-      </button>
-
+      <div class="setting-card">
+        <div class="setting-row">
+          <div>
+            <div class="setting-title">🐢 Voice Speed</div>
+            <div class="setting-desc">Make the voice slower or faster</div>
+          </div>
+          <div>
+            <button class="setting-control" onclick="changeVoiceSpeed(-0.1)" aria-label="Slower voice">−</button>
+            <span id="speedValue" class="speed-value">0.7×</span>
+            <button class="setting-control" onclick="changeVoiceSpeed(0.1)" aria-label="Faster voice">+</button>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <div class="settings-note">💡 Tip: Start with Random + Auto Voice OFF. Children can tap Letter, Word, or Phonics whenever they want to hear a sound.</div>
 
   </div>
 
@@ -640,6 +718,9 @@ const alphabet = [
 const TOTAL_CARDS = alphabet.length * 2;
 
 let repeat = false;
+let randomOrder = true;
+let autoVoice = false;
+let voiceSpeed = 0.7;
 let used = [];
 let currentCard = -1;
 let totalShown = 0;
@@ -664,6 +745,34 @@ function toggleSettings() {
 
 
 /* REPEAT */
+
+function toggleOrder() {
+  randomOrder = !randomOrder;
+  const btn = document.getElementById("orderToggle");
+  btn.textContent = randomOrder ? "Random 🎲" : "A → Z 🔤";
+  document.getElementById("message").textContent = randomOrder
+    ? "🎲 Random order selected."
+    : "🔤 A to Z order selected.";
+  used = [];
+  totalShown = 0;
+  pickNewAlphabet();
+}
+
+function toggleAutoVoice() {
+  autoVoice = !autoVoice;
+  const btn = document.getElementById("autoVoiceToggle");
+  btn.classList.toggle("on", autoVoice);
+  btn.querySelector("span").textContent = autoVoice ? "ON" : "OFF";
+  document.getElementById("message").textContent = autoVoice
+    ? "🔊 Auto Voice ON — words will be spoken after reveal."
+    : "🔇 Auto Voice OFF — tap a sound button when you want audio.";
+}
+
+function changeVoiceSpeed(delta) {
+  voiceSpeed = Math.min(1.1, Math.max(0.4, +(voiceSpeed + delta).toFixed(1)));
+  document.getElementById("speedValue").textContent = voiceSpeed.toFixed(1) + "×";
+  document.getElementById("message").textContent = "🐢 Voice speed: " + voiceSpeed.toFixed(1) + "×";
+}
 
 function toggleRepeat() {
 
@@ -769,19 +878,17 @@ function pickNewAlphabet() {
 
   }
 
-  let next =
-    pool[Math.floor(Math.random() * pool.length)];
+  let next;
 
-  if (
-    pool.length > 1 &&
-    next === currentCard
-  ) {
+  if (!randomOrder && pool.length > 0) {
+    next = pool[0];
+  } else {
+    next = pool[Math.floor(Math.random() * pool.length)];
 
-    const pos = pool.indexOf(next);
-
-    next =
-      pool[(pos + 1) % pool.length];
-
+    if (pool.length > 1 && next === currentCard) {
+      const pos = pool.indexOf(next);
+      next = pool[(pos + 1) % pool.length];
+    }
   }
 
   currentCard = next;
@@ -901,8 +1008,15 @@ function flipCard() {
 
     card.classList.add("flipped");
 
+    if (autoVoice) {
+      const letterIndex = Math.floor(currentCard / 2);
+      speakText(alphabet[letterIndex][3]);
+    }
+
     document.getElementById("message").textContent =
-      "✨ Great! Tap again for a new random alphabet.";
+      randomOrder
+        ? "✨ Great! Tap again for another alphabet."
+        : "✨ Great! Tap again to continue learning.";
 
   } else {
 
@@ -916,8 +1030,15 @@ function flipCard() {
 
       card.classList.add("flipped");
 
+      if (autoVoice) {
+        const letterIndex = Math.floor(currentCard / 2);
+        speakText(alphabet[letterIndex][3]);
+      }
+
       document.getElementById("message").textContent =
-        "🎉 New random alphabet! Keep learning.";
+        randomOrder
+          ? "🎉 New random alphabet! Keep learning."
+          : "🎉 Next alphabet! Keep learning.";
 
       busy = false;
 
@@ -970,7 +1091,7 @@ function speakText(text, lang = "en-IN") {
         new SpeechSynthesisUtterance(text);
 
       speech.lang = lang;
-      speech.rate = 0.72;
+      speech.rate = voiceSpeed;
       speech.pitch = 1.0;
       speech.volume = 1.0;
 
