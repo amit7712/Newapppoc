@@ -1236,6 +1236,15 @@ function speakText(text, lang = "en-IN") {
       const speech =
         new SpeechSynthesisUtterance(text);
 
+      // Prefer a native Hindi voice when Hindi phonics are requested.
+      const voices = speechSynthesis.getVoices();
+      if (lang === "hi-IN") {
+        const hindiVoice = voices.find(voice =>
+          /^hi(-|_)/i.test(voice.lang)
+        );
+        if (hindiVoice) speech.voice = hindiVoice;
+      }
+
       speech.lang = lang;
       speech.rate = voiceSpeed;
       speech.pitch = 1.0;
