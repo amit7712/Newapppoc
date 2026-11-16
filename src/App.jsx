@@ -38,6 +38,7 @@ export default function App() {
   const [flipped, setFlipped] = useState(false);
   const [visited, setVisited] = useState(new Set());
   const [used, setUsed] = useState(new Set());
+  const [nextAnimating, setNextAnimating] = useState(false);
 
   useEffect(() => localStorage.setItem("af-settings", JSON.stringify(settings)), [settings]);
 
@@ -78,32 +79,44 @@ export default function App() {
     }
   };
 
+  const pickNextIndex = () => {
+    if (settings.order === "series") return (index + 1) % cards.length;
+
+    let pool = cards.map((_, i) => i).filter(i => !used.has(i) && i !== index);
+    if (!pool.length) {
+      pool = cards.map((_, i) => i).filter(i => i !== index);
+      setUsed(new Set([index]));
+    }
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+
   const next = () => {
-    let nextIndex;
+    if (nextAnimating) return;
 
-    if (settings.order === "series") {
-      // A→Z mode: always advance exactly one letter.
-      nextIndex = (index + 1) % cards.length;
+    // IMPORTANT: the Next Letter action now uses the card's flip animation.
+    // The new alphabet is swapped only after the card has rotated, so it
+    // never changes instantly underneath the user.
+    const nextIndex = pickNextIndex();
+    setNextAnimating(true);
+
+    if (flipped) {
+      setFlipped(false);
+      window.setTimeout(() => {
+        setIndex(nextIndex);
+        if (!settings.repeat) setUsed(old => new Set([...old, nextIndex]));
+        window.setTimeout(() => {
+          setFlipped(true);
+          setNextAnimating(false);
+        }, 40);
+      }, 360);
     } else {
-      // Random mode + Repeat OFF: choose only from letters not shown
-      // in the current cycle. Never return the current letter.
-      let pool = cards.map((_, i) => i).filter(i => !used.has(i) && i !== index);
-
-      // If the cycle is exhausted, start a fresh A-Z cycle, still avoiding
-      // the current letter so the immediate next flip is different.
-      if (!pool.length) {
-        pool = cards.map((_, i) => i).filter(i => i !== index);
-        setUsed(new Set([index]));
-      }
-
-      nextIndex = pool[Math.floor(Math.random() * pool.length)];
+      setIndex(nextIndex);
+      if (!settings.repeat) setUsed(old => new Set([...old, nextIndex]));
+      window.setTimeout(() => {
+        setFlipped(true);
+        setNextAnimating(false);
+      }, 40);
     }
-
-    setIndex(nextIndex);
-    if (!settings.repeat) {
-      setUsed(old => new Set([...old, nextIndex]));
-    }
-    setFlipped(false);
   };
 
   const start = () => {
