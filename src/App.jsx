@@ -384,27 +384,25 @@ function Settings({ open, close, settings, setSettings }) {
 
 const homeHero = {
   position: "relative",
-  overflow: "hidden",
-  borderRadius: 7,
-  p: { xs: 3, md: 6 },
-  background: "linear-gradient(135deg,#ffffff 0%,#eef0ff 55%,#fdf1f8 100%)",
-  border: "1px solid rgba(108,99,255,.14)",
-  boxShadow: "0 24px 70px rgba(45,48,90,.12)"
+  p: { xs: 0, md: 0 },
+  background: "transparent",
+  border: "0",
+  boxShadow: "none"
 };
 
 const tileGrid = {
   display: "grid",
-  gridTemplateColumns: { xs: "1fr", sm: "repeat(2,1fr)" },
-  gap: 2
+  gridTemplateColumns: { xs: "repeat(2, minmax(0,1fr))", sm: "repeat(2,1fr)" },
+  gap: { xs: 1.2, sm: 2 }
 };
 
 const mainBtn = {
-  px: 3.5, py: 1.45, borderRadius: 4, fontWeight: 950,
+  px: 3, py: 1.35, borderRadius: 1.75, fontWeight: 950,
   boxShadow: "0 12px 30px rgba(108,99,255,.28)"
 };
 
 const secondaryBtn = {
-  px: 3.5, py: 1.45, borderRadius: 4, fontWeight: 950,
+  px: 3, py: 1.35, borderRadius: 1.75, fontWeight: 950,
   borderWidth: 2
 };
 
