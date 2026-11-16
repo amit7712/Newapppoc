@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   AppBar, Box, Button, Card, CardContent, Chip, Container, Dialog,
   DialogActions, DialogContent, DialogTitle, FormControlLabel,
@@ -39,6 +39,8 @@ export default function App() {
   const [visited, setVisited] = useState(new Set());
   const [used, setUsed] = useState(new Set());
   const [nextAnimating, setNextAnimating] = useState(false);
+  const flippedRef = useRef(false);
+  useEffect(() => { flippedRef.current = flipped; }, [flipped]);
 
   useEffect(() => localStorage.setItem("af-settings", JSON.stringify(settings)), [settings]);
 
@@ -87,7 +89,7 @@ export default function App() {
       if (settings.autoVoice) {
         window.setTimeout(() => {
           // Only speak if the card is still revealed.
-          if (flipped || document.visibilityState === "hidden") return;
+          if (!flippedRef.current || document.visibilityState === "hidden") return;
           speak(current.word);
         }, 180);
       }
