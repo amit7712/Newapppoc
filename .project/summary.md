@@ -37,8 +37,16 @@
 - The existing Android TTS path and browser speech fallback remain in use.
 - The phonics button also updates the on-screen message with the phonics sound.
 
+## Phase 3/4 work just added
+- Expanded Settings into a child-friendly learning control panel.
+- Added Random vs A→Z learning order.
+- Added Auto Voice toggle for speaking the word after reveal.
+- Added adjustable voice speed from 0.4× to 1.1×.
+- Preserved Repeat ON/OFF behavior and existing sound controls.
+- Code-level checks completed for the new settings and speech-rate integration.
+
 ## Next
-1. Complete runtime/device verification for the current Phase 1/2 audio path.
+1. Complete runtime/device verification for the current audio path.
 2. Finish Phase 2 learning interaction polish.
 3. Move into Phase 3 randomisation/progress validation.
 4. Complete child-friendly UI/UX improvements.
