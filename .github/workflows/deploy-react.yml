@@ -1,4 +1,5 @@
 name: Deploy React to GitHub Pages
+# React branch deployment only; main/master are intentionally untouched.
 
 on:
   push:
