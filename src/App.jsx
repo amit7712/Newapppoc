@@ -71,12 +71,37 @@ export default function App() {
   };
 
   const flipCard = () => {
-    const nextFlipped = !flipped;
-    setFlipped(nextFlipped);
-    setVisited(old => new Set([...old, index]));
-    if (nextFlipped && settings.autoVoice) {
-      window.setTimeout(() => speak(current.word), 180);
+    // First tap: reveal the current letter.
+    if (!flipped) {
+      setFlipped(true);
+      setVisited(old => new Set([...old, index]));
+      if (settings.autoVoice) {
+        window.setTimeout(() => speak(current.word), 180);
+      }
+      return;
     }
+
+    // Second tap: do NOT turn back to the empty "Tap to Flip" face.
+    // Pick a new alphabet and flip directly to the new letter.
+    if (nextAnimating) return;
+    const nextIndex = pickNextIndex();
+    setNextAnimating(true);
+    setFlipped(false);
+
+    window.setTimeout(() => {
+      setIndex(nextIndex);
+      if (!settings.repeat) {
+        setUsed(old => new Set([...old, nextIndex]));
+      }
+      window.setTimeout(() => {
+        setFlipped(true);
+        setVisited(old => new Set([...old, nextIndex]));
+        if (settings.autoVoice) {
+          window.setTimeout(() => speak(cards[nextIndex].word), 120);
+        }
+        setNextAnimating(false);
+      }, 40);
+    }, 360);
   };
 
   const pickNextIndex = () => {
@@ -198,7 +223,7 @@ export default function App() {
   return (
     <Box sx={pageSx}>
       <Header back={() => setScreen("home")} onSettings={() => setSettingsOpen(true)} />
-      <Container maxWidth="sm" sx={{ pb: 6 }}>
+      <Container className="learn-container" maxWidth="sm" sx={{ pb: 6 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
           <Typography fontWeight={900}>Letter {index + 1} of {cards.length}</Typography>
           <Chip size="small" label={settings.order === "random" ? "Random" : "A → Z"} />
@@ -333,7 +358,10 @@ function Header({ back, onSettings }) {
     <AppBar position="sticky" color="transparent" elevation={0} sx={{ backdropFilter: "blur(14px)", zIndex: 5 }}>
       <Toolbar sx={{ maxWidth: 900, width: "100%", mx: "auto" }}>
         {back && <IconButton onClick={back} aria-label="Back"><ArrowBackIcon /></IconButton>}
-        <Typography sx={{ flex: 1 }} fontWeight={950}>🔤 Alphabet Flipper</Typography>
+        <Box className="brand" sx={{ flex: 1 }}>
+  <img className="brand-logo" src="/logo.svg" alt="Alphabet Flipper" />
+  <Typography fontWeight={950} className="brand-name">Alphabet Flipper</Typography>
+</Box>
         <IconButton onClick={onSettings} aria-label="Settings"><SettingsIcon /></IconButton>
       </Toolbar>
     </AppBar>
