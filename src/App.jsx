@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   AppBar, Box, Button, Card, CardContent, Chip, Container, Dialog,
-  DialogActions, DialogContent, DialogTitle, Divider, FormControlLabel,
+  DialogActions, DialogContent, DialogTitle, FormControlLabel,
   IconButton, LinearProgress, MenuItem, Paper, Select, Slider, Stack,
   Switch, Toolbar, Typography
 } from "@mui/material";
@@ -62,8 +62,12 @@ export default function App() {
   };
 
   const flipCard = () => {
-    setFlipped(value => !value);
+    const nextFlipped = !flipped;
+    setFlipped(nextFlipped);
     setVisited(old => new Set([...old, index]));
+    if (nextFlipped && settings.autoVoice) {
+      window.setTimeout(() => speak(current.word), 180);
+    }
   };
 
   const next = () => {
@@ -230,14 +234,20 @@ function HomeTile({ emoji, title, subtitle, tone, onClick }) {
 }
 
 function Games({ onBack, onStart }) {
-  return <Box sx={pageSx}><Header back={onBack} onSettings={() => {}} /><Container maxWidth="md" sx={{ py: 4 }}>
-    <Chip icon={<ExtensionIcon />} label="PLAY ZONE" sx={{ fontWeight: 950 }} />\n    <Typography variant="h3" fontWeight={1000} sx={{ mt: 1 }}>🎮 Games</Typography>
-    <Typography color="text.secondary" sx={{ mb: 3 }}>Choose a game and start learning.</Typography>
-    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2,1fr)" }, gap: 2 }}>
-      <FeatureButton icon={<PlayArrowIcon />} title="Alphabet Flipper" text="Flip letters, discover words and hear sounds." onClick={onStart} />
-      <FeatureButton icon={<ExtensionIcon />} title="Letter Builder" text="Build simple words like S-I-P. Coming next." onClick={onStart} />
-    </Box>
-  </Container></Box>;
+  return <Box sx={pageSx}>
+    <Header back={onBack} onSettings={() => {}} />
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Chip icon={<ExtensionIcon />} label="PLAY ZONE" sx={{ fontWeight: 950 }} />
+      <Typography variant="h3" fontWeight={1000} sx={{ mt: 1 }}>🎮 Games</Typography>
+      <Typography color="text.secondary" sx={{ mb: 3 }}>Pick a game. Every tap should feel like play.</Typography>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2,1fr)" }, gap: 2 }}>
+        <GameCard emoji="🔤" title="Alphabet Flipper" subtitle="Flip letters, discover words and hear sounds." color="#e9e7ff" live onClick={onStart} />
+        <GameCard emoji="🧩" title="Letter Builder" subtitle="Build simple words with letter tiles." color="#e5f3ff" live onClick={onStart} />
+        <GameCard emoji="🎯" title="Find the Letter" subtitle="Spot the letter hiding in the crowd." color="#e2f8ec" onClick={onStart} />
+        <GameCard emoji="🧠" title="Memory Match" subtitle="Match capital and small letters." color="#fff0d9" onClick={onStart} />
+      </Box>
+    </Container>
+  </Box>;
 }
 
 function GameCard({ emoji, title, subtitle, color, onClick, live }) {
@@ -254,7 +264,8 @@ function GameCard({ emoji, title, subtitle, color, onClick, live }) {
 
 function Worksheets({ onBack }) {
   return <Box sx={pageSx}><Header back={onBack} onSettings={() => {}} /><Container maxWidth="md" sx={{ py: 5 }}>
-    <Chip icon={<AssignmentIcon />} label="PRACTICE ZONE" sx={{ fontWeight: 950 }} />\n    <Typography variant="h3" fontWeight={1000} sx={{ mt: 1 }}>📝 Worksheets</Typography>
+    <Chip icon={<AssignmentIcon />} label="PRACTICE ZONE" sx={{ fontWeight: 950 }} />
+    <Typography variant="h3" fontWeight={1000} sx={{ mt: 1 }}>📝 Worksheets</Typography>
     <Typography color="text.secondary" sx={{ mb: 3 }}>Practice letters with simple printable activities.</Typography>
     <Paper sx={{ p: 3, borderRadius: 4 }}>
       <Typography fontWeight={950}>Random Worksheet</Typography>
@@ -267,7 +278,8 @@ function Worksheets({ onBack }) {
 function Progress({ onBack, visited, total }) {
   const pct = total ? Math.round((visited / total) * 100) : 0;
   return <Box sx={pageSx}><Header back={onBack} onSettings={() => {}} /><Container maxWidth="md" sx={{ py: 5 }}>
-    <Chip icon={<EmojiEventsIcon />} label="MY JOURNEY" sx={{ fontWeight: 950 }} />\n    <Typography variant="h3" fontWeight={1000} sx={{ mt: 1 }}>⭐ Progress</Typography>
+    <Chip icon={<EmojiEventsIcon />} label="MY JOURNEY" sx={{ fontWeight: 950 }} />
+    <Typography variant="h3" fontWeight={1000} sx={{ mt: 1 }}>⭐ Progress</Typography>
     <Paper sx={{ p: 3, borderRadius: 4, mt: 2 }}>
       <Typography fontWeight={950}>Your learning journey</Typography>
       <Typography sx={{ mt: 1 }}>{visited} of {total} letters explored</Typography>
@@ -330,6 +342,32 @@ function Settings({ open, close, settings, setSettings }) {
     </Dialog>
   );
 }
+
+const homeHero = {
+  position: "relative",
+  overflow: "hidden",
+  borderRadius: 7,
+  p: { xs: 3, md: 6 },
+  background: "linear-gradient(135deg,#ffffff 0%,#eef0ff 55%,#fdf1f8 100%)",
+  border: "1px solid rgba(108,99,255,.14)",
+  boxShadow: "0 24px 70px rgba(45,48,90,.12)"
+};
+
+const tileGrid = {
+  display: "grid",
+  gridTemplateColumns: { xs: "1fr", sm: "repeat(2,1fr)" },
+  gap: 2
+};
+
+const mainBtn = {
+  px: 3.5, py: 1.45, borderRadius: 4, fontWeight: 950,
+  boxShadow: "0 12px 30px rgba(108,99,255,.28)"
+};
+
+const secondaryBtn = {
+  px: 3.5, py: 1.45, borderRadius: 4, fontWeight: 950,
+  borderWidth: 2
+};
 
 const pageSx = {
   minHeight: "100vh",
