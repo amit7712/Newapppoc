@@ -42,6 +42,15 @@ export default function App() {
 
   useEffect(() => localStorage.setItem("af-settings", JSON.stringify(settings)), [settings]);
 
+  // Never allow queued/previous speech to play while the card is hidden.
+  // This is especially important on mobile browsers where speech can survive
+  // a previous screen interaction.
+  useEffect(() => {
+    if (!flipped && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+  }, [flipped, screen]);
+
   // Repeat OFF = never show the same alphabet again until every A-Z letter
   // has been shown once. The current letter is also tracked immediately on start.
   useEffect(() => {
@@ -76,7 +85,11 @@ export default function App() {
       setFlipped(true);
       setVisited(old => new Set([...old, index]));
       if (settings.autoVoice) {
-        window.setTimeout(() => speak(current.word), 180);
+        window.setTimeout(() => {
+          // Only speak if the card is still revealed.
+          if (flipped || document.visibilityState === "hidden") return;
+          speak(current.word);
+        }, 180);
       }
       return;
     }
@@ -145,6 +158,8 @@ export default function App() {
   };
 
   const start = () => {
+    // Starting a new learning session must always begin silently.
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     setVisited(new Set());
 
     const firstIndex = settings.order === "random"
