@@ -30,6 +30,7 @@ body {
 button {
   font-family: inherit;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .app {
@@ -958,26 +959,53 @@ function flipBack(event) {
 
 function speakText(text, lang = "en-IN") {
 
-  /*
-   * For phonics, use the browser speech engine directly.
-   * AndroidTTS may speak a sentence differently depending on the
-   * host voice, and we need the phonics button to be deterministic
-   * in the web app.
-   */
+  const message = document.getElementById("message");
+
   if ("speechSynthesis" in window) {
 
-    speechSynthesis.cancel();
+    try {
+      speechSynthesis.cancel();
 
-    const speech =
-      new SpeechSynthesisUtterance(text);
+      const speech =
+        new SpeechSynthesisUtterance(text);
 
-    speech.lang = lang;
-    speech.rate = 0.72;
-    speech.pitch = 1.0;
-    speech.volume = 1.0;
+      speech.lang = lang;
+      speech.rate = 0.72;
+      speech.pitch = 1.0;
+      speech.volume = 1.0;
 
-    speechSynthesis.speak(speech);
-    return true;
+      speech.onstart = () => {
+        message.textContent = "🔊 Playing: " + text;
+      };
+
+      speech.onend = () => {
+        message.textContent = "✅ Finished: " + text;
+      };
+
+      speech.onerror = () => {
+        if (
+          window.AndroidTTS &&
+          typeof window.AndroidTTS.speak === "function"
+        ) {
+          try {
+            window.AndroidTTS.speak(text);
+            message.textContent = "🔊 Playing with device voice: " + text;
+            return;
+          } catch (error) {
+            // Fall through to the visible failure message.
+          }
+        }
+
+        message.textContent =
+          "⚠️ Voice could not play. Try tapping the button again.";
+      };
+
+      speechSynthesis.speak(speech);
+      return true;
+
+    } catch (error) {
+      // Continue to Android TTS fallback below.
+    }
 
   }
 
@@ -988,6 +1016,7 @@ function speakText(text, lang = "en-IN") {
 
     try {
       window.AndroidTTS.speak(text);
+      message.textContent = "🔊 Playing with device voice: " + text;
       return true;
     } catch (error) {
       // Continue to the visible failure message below.
@@ -995,7 +1024,7 @@ function speakText(text, lang = "en-IN") {
 
   }
 
-  document.getElementById("message").textContent =
+  message.textContent =
     "⚠️ Voice is not available in this browser.";
 
   return false;
@@ -1110,14 +1139,13 @@ function playPhonicsSound(event) {
   const phonics =
     PHONICS_SOUNDS[shownLetter.toUpperCase()];
 
-  if (!phonics) return;
+  if (!phonics) {
+    document.getElementById("message").textContent =
+      "⚠️ Phonics mapping is not available for this letter.";
+    return;
+  }
 
-  const played = speakText(phonics, "en-US");
-
-  document.getElementById("message").textContent =
-    played
-      ? "🔊 Phonics: " + phonics
-      : "⚠️ Phonics sound is not available.";
+  speakText(phonics, "en-US");
 }
 
 
