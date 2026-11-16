@@ -25,7 +25,7 @@ Build a polished, child-friendly Alphabet Flipper learning app from the existing
 - Prevent accidental double-actions during card transitions. **Existing transition lock retained, keyboard card activation added, and touch interaction hardened.**
 
 ## Phase 3 — Randomisation and learning flow
-**Status: Next**
+**Status: In progress — implementation and QA**
 - Keep Capital and Small letters as separate learning cards.
 - Ensure random selection does not immediately repeat the same card when alternatives exist.
 - Keep the Repeat ON/OFF behavior predictable.
@@ -33,10 +33,10 @@ Build a polished, child-friendly Alphabet Flipper learning app from the existing
 - Handle the end of a non-repeat cycle cleanly.
 
 ## Phase 4 — Child-friendly UI/UX
-**Status: Not started**
-- Refine typography, spacing, buttons, animations, and visual hierarchy.
+**Status: In progress — first polish pass**
+- Refine typography, spacing, buttons, animations, and visual hierarchy. **Added child-friendly settings cards, larger touch targets, and clearer learning controls.**
 - Keep the interface mobile-first and touch-friendly.
-- Make controls large enough for children.
+- Make controls large enough for children. **Core controls remain touch-friendly; settings are grouped into simple cards.**
 - Maintain accessible contrast and readable text.
 - Keep the playful visual style without making the screen unnecessarily complex.
 
