@@ -99,3 +99,23 @@ For every future commit, add one entry here with:
 - What we did: Updated the persistent summary with the current Phase 2 state and completed learning-interaction improvements.
 - Files changed: `.project/summary.md`
 - User instruction: Keep a readable persistent project state so the work can continue without repeatedly restating context.
+
+
+## b1e2ceab10a31e8525f24904b6daece5357d2976
+- Message: `fix: harden speech feedback and Phase 2 touch interaction`
+- What we did: Added speech start/end/error feedback, retained device TTS as a fallback when browser speech fails, improved the visible failure message, and hardened touch interaction with `touch-action: manipulation`.
+- Files changed: `index.html`
+- User instruction: Continue the remaining project work autonomously from the previous stopping point.
+- Testing status: Code-level review completed; runtime/device audio verification remains required.
+
+## 6f0cd37a5aa2076792a88c3265284812e0786c75
+- Message: `docs: update phase 2 QA status and next phase`
+- What we did: Updated the phase plan to reflect the current Phase 2 QA-hardening work and marked Phase 3 as next.
+- Files changed: `.project/plan.md`
+- User instruction: Continue the project work and keep the phase plan current.
+
+## d561258135f7005b59546c9522fd5195fb9f71ff
+- Message: `docs: update project summary after speech hardening`
+- What we did: Updated the persistent project state with speech feedback, touch hardening, and the next QA steps.
+- Files changed: `.project/summary.md`
+- User instruction: Continue the project work and maintain the persistent project summary.
