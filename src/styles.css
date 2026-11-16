@@ -11,3 +11,28 @@ button{touch-action:manipulation}
 .flip-front{color:#fff;background:linear-gradient(135deg,#6c63ff 0%,#45c8ff 52%,#ff6ca8 100%)!important;box-shadow:0 24px 60px rgba(65,72,140,.24)!important}
 .flip-back{transform:rotateY(180deg);background:linear-gradient(145deg,#fff 0%,#f2f0ff 100%)!important;box-shadow:0 24px 60px rgba(65,72,140,.16)!important}
 @media (prefers-reduced-motion:reduce){.flip-card{transition:none}}
+
+
+.home-tile,.game-card{position:relative;display:flex;align-items:center;gap:16px;padding:20px;border-radius:24px!important;border:1px solid rgba(30,40,80,.06);cursor:pointer;min-height:118px;transition:transform .18s ease,box-shadow .18s ease,filter .18s ease}
+.home-tile:hover,.game-card:hover{transform:translateY(-5px) scale(1.01);box-shadow:0 18px 42px rgba(48,55,105,.16);filter:saturate(1.04)}
+.home-tile:active,.game-card:active{transform:scale(.98)}
+.tile-emoji{width:58px;height:58px;display:grid;place-items:center;border-radius:20px;background:rgba(255,255,255,.78);font-size:34px;box-shadow:0 8px 20px rgba(60,65,120,.08)}
+.tile-arrow{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.8);color:#6c63ff}
+.game-card{display:block;padding:24px;min-height:245px}
+.game-emoji{font-size:58px;margin-bottom:12px;filter:drop-shadow(0 8px 12px rgba(50,50,80,.12))}
+.mascot-card{position:relative;min-height:250px;border-radius:34px;background:rgba(255,255,255,.74);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;box-shadow:0 18px 40px rgba(60,65,120,.08)}
+.mascot{font-size:112px;line-height:1;animation:floatMascot 3s ease-in-out infinite}
+.sparkle{position:absolute;right:22px;top:25px;font-size:30px;animation:sparkle 1.8s ease-in-out infinite}
+.reward-icon{width:52px;height:52px;border-radius:18px;display:grid;place-items:center;background:#fff4c7;font-size:27px}
+.bubble{position:absolute;border-radius:50%;pointer-events:none;opacity:.4}
+.bubble-a{width:120px;height:120px;right:8%;top:-35px;background:#bfc0ff}
+.bubble-b{width:70px;height:70px;right:32%;bottom:-25px;background:#ffb7d2}
+.bubble-c{width:35px;height:35px;left:40%;top:25%;background:#9de7ff}
+.flip-icon{font-size:64px;animation:wiggle 1.7s ease-in-out infinite}
+.word-picture{font-size:70px;line-height:1;animation:popIn .45s ease both}
+@keyframes floatMascot{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-10px) rotate(2deg)}}
+@keyframes sparkle{0%,100%{transform:scale(.8) rotate(-10deg);opacity:.5}50%{transform:scale(1.15) rotate(10deg);opacity:1}}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+@keyframes popIn{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.mascot,.sparkle,.flip-icon{animation:none}.home-tile,.game-card{transition:none}}
+@media (max-width:600px){.home-tile{min-height:102px;padding:16px}.mascot-card{min-height:210px}.mascot{font-size:90px}}
