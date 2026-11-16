@@ -1355,32 +1355,33 @@ function playWordSound(event) {
 /* 3. PHONICS SOUND */
 
 const PHONICS_SOUNDS = {
-  A: "ah",
-  B: "buh",
-  C: "kuh",
-  D: "duh",
-  E: "eh",
-  F: "fuh",
-  G: "guh",
-  H: "huh",
-  I: "ih",
-  J: "juh",
-  K: "kuh",
-  L: "luh",
-  M: "muh",
-  N: "nuh",
-  O: "ah",
-  P: "puh",
-  Q: "kwuh",
-  R: "ruh",
-  S: "suh",
-  T: "tuh",
-  U: "uh",
-  V: "vuh",
-  W: "wuh",
-  X: "ks",
-  Y: "yuh",
-  Z: "zuh"
+  // Hindi phonics: speak the Hindi sound, not the English letter name.
+  A: "ऐ",
+  B: "ब",
+  C: "क",
+  D: "ड",
+  E: "इ",
+  F: "फ",
+  G: "ग",
+  H: "ह",
+  I: "इ",
+  J: "ज",
+  K: "क",
+  L: "ल",
+  M: "म",
+  N: "न",
+  O: "ऑ",
+  P: "प",
+  Q: "क्व",
+  R: "र",
+  S: "स",
+  T: "ट",
+  U: "अ",
+  V: "व",
+  W: "व",
+  X: "क्स",
+  Y: "य",
+  Z: "ज़"
 };
 
 
@@ -1412,7 +1413,7 @@ function playPhonicsSound(event) {
     return;
   }
 
-  speakText(phonics, "en-US");
+  speakText(phonics, "hi-IN");
 }
 
 
