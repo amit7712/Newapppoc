@@ -40,7 +40,37 @@ export default function App() {
   const [used, setUsed] = useState(new Set());
   const [nextAnimating, setNextAnimating] = useState(false);
   const flippedRef = useRef(false);
+  const hasRenderedLearnRef = useRef(false);
   useEffect(() => { flippedRef.current = flipped; }, [flipped]);
+
+  // Auto voice is driven ONLY by the actual revealed state.
+  // There is deliberately no speech timer attached to the initial/start state.
+  useEffect(() => {
+    if (screen !== "learn") {
+      hasRenderedLearnRef.current = false;
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      return;
+    }
+
+    if (!flipped) {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      return;
+    }
+
+    // Speak only on a false -> true reveal transition.
+    if (!hasRenderedLearnRef.current) {
+      hasRenderedLearnRef.current = true;
+      return;
+    }
+
+    if (settings.autoVoice) {
+      const word = current.word;
+      const timer = window.setTimeout(() => {
+        if (flippedRef.current && screen === "learn") speak(word);
+      }, 120);
+      return () => window.clearTimeout(timer);
+    }
+  }, [screen, flipped, index, settings.autoVoice]);
 
   useEffect(() => localStorage.setItem("af-settings", JSON.stringify(settings)), [settings]);
 
@@ -86,13 +116,6 @@ export default function App() {
     if (!flipped) {
       setFlipped(true);
       setVisited(old => new Set([...old, index]));
-      if (settings.autoVoice) {
-        window.setTimeout(() => {
-          // Only speak if the card is still revealed.
-          if (!flippedRef.current || document.visibilityState === "hidden") return;
-          speak(current.word);
-        }, 180);
-      }
       return;
     }
 
@@ -111,9 +134,6 @@ export default function App() {
       window.setTimeout(() => {
         setFlipped(true);
         setVisited(old => new Set([...old, nextIndex]));
-        if (settings.autoVoice) {
-          window.setTimeout(() => speak(cards[nextIndex].word), 120);
-        }
         setNextAnimating(false);
       }, 40);
     }, 360);
