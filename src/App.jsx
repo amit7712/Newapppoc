@@ -76,28 +76,25 @@ export default function App() {
     return (
       <Box sx={pageSx}>
         <Header onSettings={() => setSettingsOpen(true)} />
-        <Container maxWidth="md" sx={{ py: { xs: 5, md: 8 } }}>
+        <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
           <Box sx={heroSx}>
-            <Box className="hero-orb orb-one" />
-            <Box className="hero-orb orb-two" />
-            <Chip icon={<AutoAwesomeIcon />} label="PLAY • LEARN • GROW" color="secondary" sx={{ fontWeight: 900, mb: 2 }} />
-            <Typography sx={{ fontSize: { xs: 54, md: 82 }, lineHeight: 1, fontWeight: 950, letterSpacing: -3 }}>
-              Alphabet
-              <Box component="span" sx={{ color: "primary.main" }}> Flipper</Box>
+            <Box className="hero-orb orb-one" /><Box className="hero-orb orb-two" />
+            <Chip icon={<AutoAwesomeIcon />} label="LEARN • PLAY • DISCOVER" color="secondary" sx={{ fontWeight: 950, mb: 1.5 }} />
+            <Typography sx={{ fontSize: { xs: 42, sm: 58, md: 72 }, lineHeight: .98, fontWeight: 950, letterSpacing: -2 }}>
+              Welcome to <Box component="span" sx={{ color: "primary.main" }}>Alphabet Flipper</Box>! 🚀
             </Typography>
-            <Typography sx={{ mt: 2, fontSize: { xs: 18, md: 22 }, color: "text.secondary", fontWeight: 600 }}>
-              Flip letters, hear sounds, discover words.
+            <Typography sx={{ mt: 1.5, maxWidth: 680, fontSize: { xs: 16, md: 20 }, color: "text.secondary", fontWeight: 700 }}>
+              Flip, listen, match and learn letters through playful mini-games.
             </Typography>
-            <Button size="large" variant="contained" onClick={start}
-              startIcon={<PlayArrowIcon />} sx={primaryButtonSx}>
-              Start Learning
-            </Button>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} mt={2.5}>
+              <Button size="large" variant="contained" onClick={start} startIcon={<PlayArrowIcon />} sx={primaryButtonSx}>Start Learning</Button>
+              <Button size="large" variant="outlined" onClick={() => setScreen("games")} startIcon={<ExtensionIcon />} sx={{ ...primaryButtonSx, mt: { xs: 0, sm: 3 } }}>Explore Games</Button>
+            </Stack>
           </Box>
-
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3,1fr)" }, gap: 2, mt: 3 }}>
-            <Feature icon={<ExtensionIcon />} title="Games" text="More letter games coming next." />
-            <Feature icon={<AssignmentIcon />} title="Worksheets" text="Practice sheets and random sets." />
-            <Feature icon={<CheckCircleIcon />} title="Progress" text="Track letters you have explored." />
+            <FeatureButton icon={<ExtensionIcon />} title="Games" text="Tap to explore letter games." onClick={() => setScreen("games")} />
+            <FeatureButton icon={<AssignmentIcon />} title="Worksheets" text="Practice printable activities." onClick={() => setScreen("worksheets")} />
+            <FeatureButton icon={<CheckCircleIcon />} title="Progress" text={"Explore " + visited.size + " of " + cards.length + " letters."} onClick={() => setScreen("progress")} />
           </Box>
         </Container>
         <Settings open={settingsOpen} close={() => setSettingsOpen(false)} settings={settings} setSettings={setSettings} />
@@ -105,6 +102,9 @@ export default function App() {
     );
   }
 
+  if (screen === "games") return <Games onBack={() => setScreen("home")} onStart={start} />;
+  if (screen === "worksheets") return <Worksheets onBack={() => setScreen("home")} />;
+  if (screen === "progress") return <Progress onBack={() => setScreen("home")} visited={visited.size} total={cards.length} />
   return (
     <Box sx={pageSx}>
       <Header back={() => setScreen("home")} onSettings={() => setSettingsOpen(true)} />
@@ -171,14 +171,48 @@ export default function App() {
   );
 }
 
-function Feature({ icon, title, text }) {
-  return (
-    <Paper sx={{ p: 2.3, borderRadius: 4, minHeight: 125 }}>
-      <Box sx={{ color: "primary.main", mb: .8 }}>{icon}</Box>
-      <Typography fontWeight={950}>{title}</Typography>
-      <Typography variant="body2" color="text.secondary">{text}</Typography>
+function FeatureButton({ icon, title, text, onClick }) {
+  return <Paper onClick={onClick} sx={{ p: 2.4, borderRadius: 4, minHeight: 145, cursor: "pointer", transition: "transform .2s, box-shadow .2s", "&:hover": { transform: "translateY(-5px)", boxShadow: "0 16px 40px rgba(60,65,120,.15)" } }}>
+    <Box sx={{ color: "primary.main", mb: .8 }}>{icon}</Box>
+    <Typography fontWeight={950}>{title}</Typography>
+    <Typography variant="body2" color="text.secondary">{text}</Typography>
+  </Paper>;
+}
+
+function Games({ onBack, onStart }) {
+  return <Box sx={pageSx}><Header back={onBack} onSettings={() => {}} /><Container maxWidth="md" sx={{ py: 5 }}>
+    <Typography variant="h3" fontWeight={950}>🎮 Games</Typography>
+    <Typography color="text.secondary" sx={{ mb: 3 }}>Choose a game and start learning.</Typography>
+    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2,1fr)" }, gap: 2 }}>
+      <FeatureButton icon={<PlayArrowIcon />} title="Alphabet Flipper" text="Flip letters, discover words and hear sounds." onClick={onStart} />
+      <FeatureButton icon={<ExtensionIcon />} title="Letter Builder" text="Build simple words like S-I-P. Coming next." onClick={onStart} />
+    </Box>
+  </Container></Box>;
+}
+
+function Worksheets({ onBack }) {
+  return <Box sx={pageSx}><Header back={onBack} onSettings={() => {}} /><Container maxWidth="md" sx={{ py: 5 }}>
+    <Typography variant="h3" fontWeight={950}>📝 Worksheets</Typography>
+    <Typography color="text.secondary" sx={{ mb: 3 }}>Practice letters with simple printable activities.</Typography>
+    <Paper sx={{ p: 3, borderRadius: 4 }}>
+      <Typography fontWeight={950}>Random Worksheet</Typography>
+      <Typography color="text.secondary" sx={{ mt: 1 }}>Generate a random set of letters for practice.</Typography>
+      <Button variant="contained" sx={{ mt: 2, borderRadius: 3, fontWeight: 900 }} onClick={() => window.print()}>Print Practice Sheet</Button>
     </Paper>
-  );
+  </Container></Box>;
+}
+
+function Progress({ onBack, visited, total }) {
+  const pct = total ? Math.round((visited / total) * 100) : 0;
+  return <Box sx={pageSx}><Header back={onBack} onSettings={() => {}} /><Container maxWidth="md" sx={{ py: 5 }}>
+    <Typography variant="h3" fontWeight={950}>⭐ Progress</Typography>
+    <Paper sx={{ p: 3, borderRadius: 4, mt: 2 }}>
+      <Typography fontWeight={950}>Your learning journey</Typography>
+      <Typography sx={{ mt: 1 }}>{visited} of {total} letters explored</Typography>
+      <LinearProgress value={pct} variant="determinate" sx={{ height: 12, borderRadius: 8, mt: 2 }} />
+      <Typography color="text.secondary" sx={{ mt: 1 }}>{pct}% complete</Typography>
+    </Paper>
+  </Container></Box>;
 }
 
 function Header({ back, onSettings }) {
