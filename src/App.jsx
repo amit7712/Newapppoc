@@ -41,6 +41,14 @@ export default function App() {
 
   useEffect(() => localStorage.setItem("af-settings", JSON.stringify(settings)), [settings]);
 
+  // Repeat OFF = never show the same alphabet again until every A-Z letter
+  // has been shown once. The current letter is also tracked immediately on start.
+  useEffect(() => {
+    if (screen === "learn" && !settings.repeat) {
+      setUsed(prev => prev.has(index) ? prev : new Set([...prev, index]));
+    }
+  }, [screen, index, settings.repeat]);
+
   const cards = useMemo(() => alphabet.map(([upper, lower, picture, word, example]) => ({
     upper, lower, picture, word, example
   })), []);
@@ -71,25 +79,43 @@ export default function App() {
   };
 
   const next = () => {
-    let pool = cards.map((_, i) => i);
-    if (!settings.repeat) pool = pool.filter(i => !used.has(i));
-    if (!pool.length) {
-      setUsed(new Set());
-      pool = cards.map((_, i) => i);
+    let nextIndex;
+
+    if (settings.order === "series") {
+      // A→Z mode: always advance exactly one letter.
+      nextIndex = (index + 1) % cards.length;
+    } else {
+      // Random mode + Repeat OFF: choose only from letters not shown
+      // in the current cycle. Never return the current letter.
+      let pool = cards.map((_, i) => i).filter(i => !used.has(i) && i !== index);
+
+      // If the cycle is exhausted, start a fresh A-Z cycle, still avoiding
+      // the current letter so the immediate next flip is different.
+      if (!pool.length) {
+        pool = cards.map((_, i) => i).filter(i => i !== index);
+        setUsed(new Set([index]));
+      }
+
+      nextIndex = pool[Math.floor(Math.random() * pool.length)];
     }
-    if (pool.length > 1) pool = pool.filter(i => i !== index);
-    const nextIndex = settings.order === "series"
-      ? (index + 1) % cards.length
-      : pool[Math.floor(Math.random() * pool.length)];
+
     setIndex(nextIndex);
-    if (!settings.repeat) setUsed(old => new Set([...old, nextIndex]));
+    if (!settings.repeat) {
+      setUsed(old => new Set([...old, nextIndex]));
+    }
     setFlipped(false);
   };
 
   const start = () => {
     setVisited(new Set());
-    setUsed(new Set());
-    setIndex(settings.order === "random" ? Math.floor(Math.random() * cards.length) : 0);
+
+    const firstIndex = settings.order === "random"
+      ? Math.floor(Math.random() * cards.length)
+      : 0;
+
+    // In Repeat OFF mode, the first displayed alphabet belongs to the cycle.
+    setUsed(settings.repeat ? new Set() : new Set([firstIndex]));
+    setIndex(firstIndex);
     setFlipped(false);
     setScreen("learn");
   };
