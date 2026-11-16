@@ -14,18 +14,18 @@ Build a polished, child-friendly Alphabet Flipper learning app from the existing
 - Fix the reported Phonics button issue and verify the speech path before moving to the next phase. **Fix implemented; runtime verification pending.**
 
 ## Phase 2 — Learning experience
-**Status: In progress**
+**Status: In progress — QA hardening**
 - Improve the card reveal experience for children. **Core interaction remains intact; accessibility and feedback improvements are now in progress.**
 - Make the letter, picture, word, phonics, and example text visually clear.
 - Make the three audio actions clearly distinguishable:
   - Letter sound
   - Word sound
   - Phonics sound
-- Improve feedback after each interaction. **Added explicit Letter/Word/Phonics feedback messages and live status announcements.**
-- Prevent accidental double-actions during card transitions. **Existing transition lock retained and keyboard card activation added.**
+- Improve feedback after each interaction. **Added explicit Letter/Word/Phonics feedback messages and live status announcements; speech start/end/error feedback is now handled centrally.**
+- Prevent accidental double-actions during card transitions. **Existing transition lock retained, keyboard card activation added, and touch interaction hardened.**
 
 ## Phase 3 — Randomisation and learning flow
-**Status: Not started**
+**Status: Next**
 - Keep Capital and Small letters as separate learning cards.
 - Ensure random selection does not immediately repeat the same card when alternatives exist.
 - Keep the Repeat ON/OFF behavior predictable.
