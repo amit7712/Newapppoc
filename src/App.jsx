@@ -358,25 +358,35 @@ function Games({ onBack, onStart }) {
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Chip icon={<ExtensionIcon />} label="PLAY ZONE" sx={{ fontWeight: 950 }} />
       <Typography variant="h3" fontWeight={1000} sx={{ mt: 1 }}>🎮 Games</Typography>
-      <Typography color="text.secondary" sx={{ mb: 3 }}>Pick a game. Every tap should feel like play.</Typography>
+      <Typography color="text.secondary" sx={{ mb: 3 }}>Choose a game to learn, play and earn stars.</Typography>
+      <Paper sx={{ p: 2.2, mb: 3, borderRadius: 4, bgcolor: "#fff", border: "1px solid #ececf5" }}>
+        <Typography fontWeight={950}>🎯 Game Zone</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>
+          Each game has its own activity. Alphabet Flipper is ready to play now; new games will be added here separately.
+        </Typography>
+      </Paper>
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2,1fr)" }, gap: 2 }}>
         <GameCard emoji="🔤" title="Alphabet Flipper" subtitle="Flip letters, discover words and hear sounds." color="#e9e7ff" live onClick={onStart} />
-        <GameCard emoji="🧩" title="Letter Builder" subtitle="Build simple words with letter tiles." color="#e5f3ff" live onClick={onStart} />
-        <GameCard emoji="🎯" title="Find the Letter" subtitle="Spot the letter hiding in the crowd." color="#e2f8ec" onClick={onStart} />
-        <GameCard emoji="🧠" title="Memory Match" subtitle="Match capital and small letters." color="#fff0d9" onClick={onStart} />
+        <GameCard emoji="🧩" title="Letter Builder" subtitle="Build simple words with letter tiles." color="#e5f3ff" />
+        <GameCard emoji="🎯" title="Find the Letter" subtitle="Spot the letter hiding in the crowd." color="#e2f8ec" />
+        <GameCard emoji="🧠" title="Memory Match" subtitle="Match capital and small letters." color="#fff0d9" />
       </Box>
     </Container>
   </Box>;
 }
 
 function GameCard({ emoji, title, subtitle, color, onClick, live }) {
-  return <Paper className="game-card" onClick={onClick} sx={{ bgcolor: color }}>
+  const available = Boolean(onClick);
+  return <Paper className="game-card" onClick={available ? onClick : undefined}
+    sx={{ bgcolor: color, opacity: available ? 1 : .78, cursor: available ? "pointer" : "default" }}>
     {live && <Chip label="PLAY NOW" size="small" color="secondary" sx={{ position: "absolute", top: 14, right: 14, fontWeight: 1000 }} />}
     <Box className="game-emoji">{emoji}</Box>
     <Typography fontWeight={1000} fontSize={21}>{title}</Typography>
     <Typography color="text.secondary" fontWeight={700}>{subtitle}</Typography>
-    <Button variant="contained" endIcon={<ArrowForwardIcon />} sx={{ mt: 2, borderRadius: 3, fontWeight: 950 }} onClick={e => { e.stopPropagation(); onClick(); }}>
-      {live ? "Start" : "Try demo"}
+    <Button variant="contained" endIcon={<ArrowForwardIcon />} disabled={!available}
+      sx={{ mt: 2, borderRadius: 3, fontWeight: 950 }}
+      onClick={available ? (e => { e.stopPropagation(); onClick(); }) : undefined}>
+      {live ? "Start" : "Coming Soon"}
     </Button>
   </Paper>;
 }
@@ -385,12 +395,23 @@ function Worksheets({ onBack }) {
   return <Box sx={pageSx}><Header back={onBack} onSettings={() => {}} /><Container maxWidth="md" sx={{ py: 5 }}>
     <Chip icon={<AssignmentIcon />} label="PRACTICE ZONE" sx={{ fontWeight: 950 }} />
     <Typography variant="h3" fontWeight={1000} sx={{ mt: 1 }}>📝 Worksheets</Typography>
-    <Typography color="text.secondary" sx={{ mb: 3 }}>Practice letters with simple printable activities.</Typography>
-    <Paper sx={{ p: 3, borderRadius: 4 }}>
-      <Typography fontWeight={950}>Random Worksheet</Typography>
-      <Typography color="text.secondary" sx={{ mt: 1 }}>Generate a random set of letters for practice.</Typography>
-      <Button variant="contained" sx={{ mt: 2, borderRadius: 3, fontWeight: 900 }} onClick={() => window.print()}>Print Practice Sheet</Button>
-    </Paper>
+    <Typography color="text.secondary" sx={{ mb: 3 }}>Choose a practice activity. Worksheets stay separate from Games and Learning.</Typography>
+    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2,1fr)" }, gap: 2 }}>
+      <Paper className="game-card" sx={{ bgcolor: "#fff0d9" }}>
+        <Box className="game-emoji">✏️</Box>
+        <Typography fontWeight={1000} fontSize={21}>Alphabet Practice</Typography>
+        <Typography color="text.secondary" fontWeight={700}>Practice letters and simple words.</Typography>
+        <Button variant="contained" sx={{ mt: 2, borderRadius: 3, fontWeight: 950 }} onClick={() => window.print()}>
+          Print Practice Sheet
+        </Button>
+      </Paper>
+      <Paper className="game-card" sx={{ bgcolor: "#e5f3ff" }}>
+        <Box className="game-emoji">🔤</Box>
+        <Typography fontWeight={1000} fontSize={21}>Capital & Small</Typography>
+        <Typography color="text.secondary" fontWeight={700}>Practice matching uppercase and lowercase letters.</Typography>
+        <Button variant="outlined" disabled sx={{ mt: 2, borderRadius: 3, fontWeight: 950 }}>Coming Soon</Button>
+      </Paper>
+    </Box>
   </Container></Box>;
 }
 
