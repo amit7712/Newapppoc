@@ -13,3 +13,13 @@ createRoot(document.getElementById("root")).render(
     </ThemeProvider>
   </React.StrictMode>
 );
+
+// Register a network-first service worker so GitHub Pages does not
+// keep serving an old HTML shell after a new React deployment.
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, {
+      scope: import.meta.env.BASE_URL
+    }).catch(() => {});
+  });
+}
