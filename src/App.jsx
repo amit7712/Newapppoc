@@ -3,7 +3,7 @@ import {
   AppBar, Box, Button, Card, CardContent, Chip, Container, Dialog,
   DialogActions, DialogContent, DialogTitle, FormControlLabel,
   IconButton, LinearProgress, MenuItem, Paper, Select, Slider, Stack,
-  Switch, Toolbar, Typography
+  Switch, Toolbar, Typography, TextField, Avatar
 } from "@mui/material";
 import SettingsIcon from "@mui/icons-material/Settings";
 import CloseIcon from "@mui/icons-material/Close";
@@ -20,10 +20,17 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import LocalLibraryIcon from "@mui/icons-material/LocalLibrary";
 import CelebrationIcon from "@mui/icons-material/Celebration";
+import EditIcon from "@mui/icons-material/Edit";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { alphabet, PHONICS_SOUNDS } from "./alphabet.js";
 
 const defaults = { repeat: false, order: "random", autoVoice: false, speed: 0.7 };
+const defaultProfile = { name: "Little Learner", level: "LKG", avatar: "🦊" };
+
+const loadProfile = () => {
+  try { return { ...defaultProfile, ...JSON.parse(localStorage.getItem("af-profile") || "{}") }; }
+  catch { return defaultProfile; }
+};
 
 const loadSettings = () => {
   try { return { ...defaults, ...JSON.parse(localStorage.getItem("af-settings") || "{}") }; }
@@ -34,6 +41,8 @@ export default function App() {
   const [screen, setScreen] = useState("home");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState(loadSettings);
+  const [profile, setProfile] = useState(loadProfile);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [visited, setVisited] = useState(new Set());
@@ -73,6 +82,7 @@ export default function App() {
   }, [screen, flipped, index, settings.autoVoice]);
 
   useEffect(() => localStorage.setItem("af-settings", JSON.stringify(settings)), [settings]);
+  useEffect(() => localStorage.setItem("af-profile", JSON.stringify(profile)), [profile]);
 
   // Never allow queued/previous speech to play while the card is hidden.
   // This is especially important on mobile browsers where speech can survive
@@ -217,56 +227,95 @@ export default function App() {
     return (
       <Box sx={pageSx}>
         <Header onSettings={() => setSettingsOpen(true)} />
-        <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
-          <Box sx={homeHero}>
-            <Box className="bubble bubble-a" /><Box className="bubble bubble-b" /><Box className="bubble bubble-c" />
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ position: "relative", zIndex: 1 }}>
-              <Chip icon={<StarIcon />} label="Little Learner" sx={{ bgcolor: "rgba(255,255,255,.82)", fontWeight: 950 }} />
-              <Chip label={`⭐ ${visited.size} letters`} sx={{ bgcolor: "rgba(255,255,255,.82)", fontWeight: 950 }} />
+        <Container maxWidth="lg" sx={{ py: { xs: 1.5, md: 3 } }}>
+          <Paper className="profile-panel" sx={{ p: { xs: 1.5, md: 2 }, mb: 2 }}>
+            <Stack direction="row" alignItems="center" spacing={1.5}>
+              <Avatar sx={{ width: { xs: 48, md: 58 }, height: { xs: 48, md: 58 }, bgcolor: "#e9e7ff", fontSize: { xs: 25, md: 30 } }}>
+                {profile.avatar}
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography sx={{ fontSize: { xs: 22, md: 28 }, fontWeight: 1000, lineHeight: 1.1 }}>
+                  Hi, {profile.name} 👋
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#68708a", fontWeight: 800, mt: .3 }}>
+                  {profile.level} • Little Learner
+                </Typography>
+              </Box>
+              <IconButton onClick={() => setProfileOpen(true)} aria-label="Edit learner profile" sx={{ bgcolor: "#f1f0ff" }}>
+                <EditIcon />
+              </IconButton>
             </Stack>
-            <Box sx={{ position: "relative", zIndex: 1, display: "grid", gridTemplateColumns: { xs: "1fr", md: "1.35fr .65fr" }, alignItems: "center", gap: 2, mt: 2 }}>
-              <Box>
-                <Typography sx={{ fontSize: { xs: 40, sm: 52, md: 68 }, lineHeight: .98, fontWeight: 1000, color: "#18213d" }}>
-                  Learn letters.<br /><Box component="span" sx={{ color: "#6C63FF" }}>Play &amp; grow!</Box> 🚀
-                </Typography>
-                <Typography sx={{ mt: 1.5, maxWidth: 610, color: "#58627c", fontWeight: 750, fontSize: { xs: 16, md: 19 } }}>
-                  Flip, listen, discover words and collect stars while you learn ABC.
-                </Typography>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} sx={{ mt: 2.5 }}>
-                  <Button size="large" variant="contained" onClick={start} startIcon={<PlayArrowIcon />} sx={mainBtn}>Start Learning</Button>
-                  <Button size="large" variant="outlined" onClick={() => setScreen("games")} startIcon={<ExtensionIcon />} sx={secondaryBtn}>Play Games</Button>
-                </Stack>
-              </Box>
-              <Box className="mascot-card">
-                <Box className="mascot">🦊</Box>
-                <Typography fontWeight={1000} sx={{ color: "#18213d" }}>Hi, little learner!</Typography>
-                <Typography variant="body2" sx={{ color: "#66708b", fontWeight: 700 }}>Ready for today's ABC adventure?</Typography>
-                <Box className="sparkle">✨</Box>
-              </Box>
+          </Paper>
+
+          <Box className="home-welcome">
+            <Box>
+              <Typography sx={{ fontSize: { xs: 31, sm: 42, md: 54 }, lineHeight: .98, fontWeight: 1000, color: "#18213d" }}>
+                Ready to learn?
+              </Typography>
+              <Typography sx={{ mt: 1, color: "#58627c", fontWeight: 750, fontSize: { xs: 15, md: 18 }, maxWidth: 620 }}>
+                Pick one activity and continue your ABC adventure.
+              </Typography>
             </Box>
+            <Box className="home-welcome-emoji">🚀</Box>
           </Box>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 3, mb: 1.2 }}>
+
+          <Box className="home-stats">
+            <Paper className="home-stat">
+              <Typography className="stat-icon">🔤</Typography>
+              <Box>
+                <Typography className="stat-value">{visited.size}/26</Typography>
+                <Typography className="stat-label">Letters explored</Typography>
+              </Box>
+            </Paper>
+            <Paper className="home-stat">
+              <Typography className="stat-icon">⭐</Typography>
+              <Box>
+                <Typography className="stat-value">{visited.size}</Typography>
+                <Typography className="stat-label">Stars earned</Typography>
+              </Box>
+            </Paper>
+            <Paper className="home-stat">
+              <Typography className="stat-icon">🎯</Typography>
+              <Box>
+                <Typography className="stat-value">{Math.min(visited.size, 5)}/5</Typography>
+                <Typography className="stat-label">Today's goal</Typography>
+              </Box>
+            </Paper>
+          </Box>
+
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 2.5, mb: 1.2 }}>
             <Typography variant="h5" fontWeight={1000}>What do you want to do?</Typography>
-            <Chip label="Tap to explore" size="small" sx={{ fontWeight: 900 }} />
+            <Typography variant="body2" sx={{ color: "#68708a", fontWeight: 800 }}>Choose an activity</Typography>
           </Stack>
+
           <Box sx={tileGrid}>
+            <HomeTile emoji="🔤" title="Learn ABC" subtitle="Flip & discover letters" tone="#e5f3ff" onClick={start} />
             <HomeTile emoji="🎮" title="Games" subtitle="Learn by playing" tone="#e9e7ff" onClick={() => setScreen("games")} />
             <HomeTile emoji="📝" title="Worksheets" subtitle="Practice & print" tone="#fff0d9" onClick={() => setScreen("worksheets")} />
-            <HomeTile emoji="⭐" title="My Progress" subtitle={`${visited.size}/${cards.length} letters explored`} tone="#e2f8ec" onClick={() => setScreen("progress")} />
-            <HomeTile emoji="📚" title="Alphabet" subtitle="A to Z adventure" tone="#e5f3ff" onClick={start} />
+            <HomeTile emoji="🏆" title="My Progress" subtitle="See learning journey" tone="#e2f8ec" onClick={() => setScreen("progress")} />
           </Box>
-          <Paper sx={{ mt: 3, p: 2.2, borderRadius: 5, bgcolor: "#fff", border: "1px solid #ececf5", boxShadow: "0 12px 36px rgba(42,49,93,.07)" }}>
-            <Stack direction="row" spacing={1.5} alignItems="center">
+
+          <Paper sx={{ mt: 2.5, p: { xs: 1.7, md: 2.2 }, borderRadius: 4, bgcolor: "#fff", border: "1px solid #ececf5", boxShadow: "0 10px 30px rgba(42,49,93,.06)" }}>
+            <Stack direction="row" spacing={1.4} alignItems="center">
               <Box className="reward-icon">🏆</Box>
               <Box sx={{ flex: 1 }}>
                 <Typography fontWeight={1000}>Today's learning goal</Typography>
-                <Typography variant="body2" color="text.secondary" fontWeight={650}>Explore 5 letters and hear their sounds.</Typography>
+                <Typography variant="body2" color="text.secondary" fontWeight={650}>
+                  Explore 5 letters and hear their sounds.
+                </Typography>
                 <LinearProgress variant="determinate" value={Math.min((visited.size / 5) * 100, 100)} sx={{ mt: 1, height: 9, borderRadius: 9 }} />
               </Box>
               <Typography fontWeight={1000} color="primary.main">{Math.min(visited.size, 5)}/5</Typography>
             </Stack>
           </Paper>
         </Container>
+
+        <ProfileDialog
+          open={profileOpen}
+          close={() => setProfileOpen(false)}
+          profile={profile}
+          setProfile={setProfile}
+        />
         <Settings open={settingsOpen} close={() => setSettingsOpen(false)} settings={settings} setSettings={setSettings} />
       </Box>
     );
@@ -338,6 +387,58 @@ export default function App() {
       </Container>
       <Settings open={settingsOpen} close={() => setSettingsOpen(false)} settings={settings} setSettings={setSettings} />
     </Box>
+  );
+}
+
+
+function ProfileDialog({ open, close, profile, setProfile }) {
+  const [draft, setDraft] = useState(profile);
+
+  useEffect(() => {
+    if (open) setDraft(profile);
+  }, [open, profile]);
+
+  const save = () => {
+    setProfile({ ...draft, name: draft.name.trim() || "Little Learner" });
+    close();
+  };
+
+  return (
+    <Dialog open={open} onClose={close} fullWidth maxWidth="xs" PaperProps={{ sx: { borderRadius: 4 } }}>
+      <DialogTitle fontWeight={950}>
+        Learner Profile
+        <IconButton onClick={close} sx={{ float: "right" }} aria-label="Close"><CloseIcon /></IconButton>
+      </DialogTitle>
+      <DialogContent dividers>
+        <Stack spacing={2}>
+          <TextField label="Child's name" value={draft.name}
+            onChange={e => setDraft(x => ({ ...x, name: e.target.value.slice(0, 30) }))}
+            autoFocus fullWidth />
+          <Select fullWidth value={draft.level}
+            onChange={e => setDraft(x => ({ ...x, level: e.target.value }))}>
+            <MenuItem value="LKG">LKG</MenuItem>
+            <MenuItem value="UKG">UKG</MenuItem>
+            <MenuItem value="Class 1">Class 1</MenuItem>
+          </Select>
+          <Box>
+            <Typography fontWeight={900} sx={{ mb: 1 }}>Choose avatar</Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              {["🦊","🐼","🐯","🐰","🐸","🦁"].map(emoji => (
+                <Button key={emoji} variant={draft.avatar === emoji ? "contained" : "outlined"}
+                  onClick={() => setDraft(x => ({ ...x, avatar: emoji }))}
+                  sx={{ minWidth: 48, fontSize: 24, borderRadius: 2 }}>
+                  {emoji}
+                </Button>
+              ))}
+            </Stack>
+          </Box>
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ p: 2 }}>
+        <Button onClick={close} variant="outlined" sx={{ borderRadius: 3, fontWeight: 900 }}>Cancel</Button>
+        <Button onClick={save} variant="contained" sx={{ borderRadius: 3, fontWeight: 900 }}>Save Profile</Button>
+      </DialogActions>
+    </Dialog>
   );
 }
 
