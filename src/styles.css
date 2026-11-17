@@ -1,0 +1,279 @@
+:root{
+  --ink:#20243a;
+  --muted:#68708a;
+  --purple:#6d5dfc;
+  --pink:#ff6fae;
+  --blue:#55c8f5;
+  --yellow:#ffd85c;
+  --green:#58c995;
+  --surface:#ffffff;
+  --line:#e8e9f2;
+}
+*{box-sizing:border-box}
+html,body,#root{margin:0;min-height:100%;font-family:Nunito,Inter,system-ui,sans-serif}
+body{background:#f6f8ff;color:var(--ink)}
+button{touch-action:manipulation}
+.MuiButton-root{font-family:inherit}
+.MuiPaper-root,.MuiCard-root{background-image:none}
+
+/* Kids app geometry: structured panels, soft corners, fewer pill shapes */
+.home-hero{
+  border-radius:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.MuiButton-root{border-radius:14px!important}
+.MuiChip-root{border-radius:10px!important}
+.MuiPaper-root{border-radius:20px!important}
+.MuiDialog-paper{border-radius:22px!important}
+
+.home-tile{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:18px 18px;
+  min-height:108px;
+  border-radius:18px!important;
+  border:2px solid rgba(32,36,58,.06)!important;
+  cursor:pointer;
+  box-shadow:0 8px 24px rgba(45,52,92,.07)!important;
+  transition:transform .16s ease,box-shadow .16s ease;
+}
+.home-tile:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(45,52,92,.12)!important}
+.home-tile:active{transform:scale(.985)}
+.tile-emoji{
+  width:60px;height:60px;flex:0 0 60px;
+  display:grid;place-items:center;
+  border-radius:16px;
+  background:rgba(255,255,255,.9);
+  font-size:32px;
+}
+.tile-arrow{
+  width:36px;height:36px;flex:0 0 36px;
+  display:grid;place-items:center;
+  border-radius:10px;
+  background:#fff;
+  color:var(--purple);
+}
+
+.mascot-card{
+  position:relative;
+  min-height:260px;
+  border-radius:22px;
+  background:rgba(255,255,255,.82);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:24px;
+  border:2px solid rgba(255,255,255,.8);
+  box-shadow:0 16px 38px rgba(58,65,110,.09);
+}
+.mascot{font-size:104px;line-height:1;animation:floatMascot 3s ease-in-out infinite}
+.sparkle{position:absolute;right:20px;top:18px;font-size:27px;animation:sparkle 1.8s ease-in-out infinite}
+
+.reward-icon{
+  width:52px;height:52px;flex:0 0 52px;
+  border-radius:16px;
+  display:grid;place-items:center;
+  background:#fff4c7;
+  font-size:26px;
+}
+
+.bubble{position:absolute;border-radius:50%;pointer-events:none;opacity:.42}
+.bubble-a{width:130px;height:130px;right:5%;top:-50px;background:#c9c6ff}
+.bubble-b{width:76px;height:76px;right:31%;bottom:-30px;background:#ffc2dc}
+.bubble-c{width:34px;height:34px;left:42%;top:26%;background:#a7e8ff}
+
+.flip-scene{perspective:1400px;cursor:pointer;min-height:390px}
+.flip-card{
+  position:relative;width:100%;min-height:390px;
+  transition:transform .72s cubic-bezier(.2,.75,.25,1);
+  transform-style:preserve-3d;
+}
+.flip-scene.is-flipped .flip-card{transform:rotateY(180deg)}
+.flip-face{
+  position:absolute;inset:0;
+  backface-visibility:hidden;
+  overflow:hidden;
+  border-radius:22px!important;
+}
+.flip-front{
+  color:#fff;
+  background:linear-gradient(135deg,#6d5dfc 0%,#55c8f5 55%,#ff6fae 100%)!important;
+  box-shadow:0 22px 50px rgba(65,72,140,.22)!important;
+}
+.flip-back{
+  transform:rotateY(180deg);
+  background:#fff!important;
+  border:2px solid #ececf4;
+  box-shadow:0 22px 50px rgba(65,72,140,.13)!important;
+}
+
+.game-card{
+  position:relative;
+  display:block;
+  padding:24px;
+  min-height:245px;
+  border-radius:18px!important;
+  border:2px solid rgba(32,36,58,.06)!important;
+  cursor:pointer;
+  box-shadow:0 9px 26px rgba(45,52,92,.07)!important;
+  transition:transform .16s ease,box-shadow .16s ease;
+}
+.game-card:hover{transform:translateY(-4px);box-shadow:0 15px 34px rgba(45,52,92,.13)!important}
+.game-emoji{font-size:56px;line-height:1;margin-bottom:14px;filter:drop-shadow(0 7px 10px rgba(50,50,80,.1))}
+
+.section-card{
+  border-radius:18px!important;
+  border:2px solid var(--line)!important;
+  box-shadow:0 10px 30px rgba(45,52,92,.06)!important;
+}
+
+@keyframes floatMascot{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-9px) rotate(2deg)}}
+@keyframes sparkle{0%,100%{transform:scale(.8) rotate(-10deg);opacity:.5}50%{transform:scale(1.12) rotate(10deg);opacity:1}}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+@media (prefers-reduced-motion:reduce){
+  .mascot,.sparkle{animation:none}
+  .home-tile,.game-card{transition:none}
+}
+@media (max-width:600px){
+  .home-tile{min-height:92px;padding:13px 12px;border-radius:16px!important}
+  .home-tile .tile-emoji{width:46px;height:46px;flex-basis:46px;font-size:25px;border-radius:14px}
+  .home-tile .tile-arrow{width:28px;height:28px;flex-basis:28px;border-radius:9px}
+  .home-tile .tile-arrow svg{font-size:18px}
+  .home-tile .MuiTypography-root{line-height:1.12}
+  .home-tile .MuiTypography-h6{font-size:17px}
+  .tile-emoji{width:52px;height:52px;flex-basis:52px;border-radius:16px;font-size:29px}
+  .mascot-card{min-height:215px;border-radius:20px}
+  .mascot{font-size:88px}
+  .flip-face{border-radius:20px!important}
+}
+/* Mobile dashboard: no giant enclosing blob; content reads as a clean learning screen */
+@media (max-width:600px){
+  .home-hero + *{margin-top:18px!important}
+  .home-hero .MuiChip-root{font-size:13px;height:34px}
+  .home-hero .mascot-card{
+    min-height:190px;
+    margin-top:16px;
+    padding:18px 14px;
+    border-radius:18px;
+  }
+  .home-hero .mascot{font-size:76px}
+  .home-hero .sparkle{right:16px;top:12px}
+}
+
+/* Brand / logo */
+.brand{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:0;
+}
+.brand-logo{
+  width:32px;
+  height:32px;
+  display:block;
+  flex:0 0 32px;
+}
+.brand-name{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-size:20px!important;
+}
+
+/* Responsive foundation */
+html{
+  width:100%;
+  overflow-x:hidden;
+}
+body,#root{
+  width:100%;
+  max-width:100%;
+  overflow-x:hidden;
+}
+img,svg{
+  max-width:100%;
+}
+.MuiContainer-root{
+  width:100%;
+}
+.learn-container{
+  width:100%;
+}
+.flip-scene{
+  width:100%;
+  min-width:0;
+}
+.flip-card{
+  width:100%;
+  min-width:0;
+  height:clamp(360px,58vw,450px);
+  min-height:360px;
+  max-height:450px;
+}
+.flip-face{
+  width:100%;
+  height:100%;
+}
+.card-face-content{
+  min-height:0!important;
+}
+
+/* Keep the learning screen proportional when browser switches viewport modes */
+@media (max-width:900px){
+  .learn-container{
+    max-width:620px!important;
+  }
+}
+@media (max-width:600px){
+  .MuiToolbar-root{
+    min-height:58px!important;
+    padding-left:12px!important;
+    padding-right:12px!important;
+  }
+  .brand-logo{
+    width:29px;
+    height:29px;
+    flex-basis:29px;
+  }
+  .brand-name{
+    font-size:18px!important;
+  }
+  .learn-container{
+    padding-left:16px!important;
+    padding-right:16px!important;
+    max-width:none!important;
+  }
+  .flip-scene{
+    min-height:0;
+  }
+  .flip-card{
+    height:clamp(350px,112vw,470px);
+    min-height:350px;
+    max-height:470px;
+  }
+  .flip-face{
+    border-radius:20px!important;
+  }
+  .flip-face .MuiCardContent-root{
+    padding:20px!important;
+  }
+}
+@media (min-width:601px){
+  .flip-card{
+    height:450px;
+  }
+}
+@media (orientation:landscape) and (max-height:600px){
+  .flip-card{
+    height:calc(100vh - 170px);
+    min-height:300px;
+    max-height:430px;
+  }
+}
