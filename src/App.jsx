@@ -83,6 +83,19 @@ export default function App() {
     }
   }, [flipped, screen]);
 
+  // Cancel speech when the browser tab is backgrounded/hidden.
+  useEffect(() => {
+    const stopSpeech = () => {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    };
+    document.addEventListener("visibilitychange", stopSpeech);
+    window.addEventListener("pagehide", stopSpeech);
+    return () => {
+      document.removeEventListener("visibilitychange", stopSpeech);
+      window.removeEventListener("pagehide", stopSpeech);
+    };
+  }, []);
+
   // Repeat OFF = never show the same alphabet again until every A-Z letter
   // has been shown once. The current letter is also tracked immediately on start.
   useEffect(() => {
@@ -99,6 +112,11 @@ export default function App() {
   const progress = ((visited.size + (flipped ? 1 : 0)) / cards.length) * 100;
 
   const speak = (text, lang = "en-IN") => {
+    // Central safety gate: hidden cards can never start speech.
+    if (screen !== "learn" || !flipped) {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      return;
+    }
     if (!("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
@@ -296,9 +314,9 @@ export default function App() {
         </Box>
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} mt={2}>
-          <Sound label="Letter" fn={() => speak(current.upper)} />
-          <Sound label="Word" fn={() => speak(current.word)} />
-          <Sound label="Hindi Phonics" fn={() => speak(PHONICS_SOUNDS[current.upper], "hi-IN")} />
+          <Sound label="Letter" disabled={!flipped} fn={() => speak(current.upper)} />
+          <Sound label="Word" disabled={!flipped} fn={() => speak(current.word)} />
+          <Sound label="Hindi Phonics" disabled={!flipped} fn={() => speak(PHONICS_SOUNDS[current.upper], "hi-IN")} />
         </Stack>
 
         <Button fullWidth variant="contained" onClick={next}
@@ -405,9 +423,10 @@ function Header({ back, onSettings }) {
   );
 }
 
-function Sound({ label, fn }) {
+function Sound({ label, fn, disabled = false }) {
   return (
     <Button fullWidth variant="outlined" startIcon={<VolumeUpIcon />}
+      disabled={disabled}
       onClick={e => { e.stopPropagation(); fn(); }}
       sx={{ borderRadius: 3, fontWeight: 900, py: 1.2 }}>
       {label}
