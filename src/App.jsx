@@ -25,16 +25,32 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { alphabet, PHONICS_SOUNDS } from "./alphabet.js";
 
 const defaults = { repeat: false, order: "random", autoVoice: false, speed: 0.7 };
-const defaultProfile = { name: "Little Learner", level: "LKG", avatar: "🦊" };
+const defaultProfile = { name: "Little Learner", level: "LKG", avatar: "🦊", visited: [] };
+const allowedLevels = new Set(["LKG", "UKG", "Class 1"]);
+const allowedAvatars = new Set(["🦊","🐼","🐯","🐰","🐸","🦁"]);
 
 const loadProfile = () => {
-  try { return { ...defaultProfile, ...JSON.parse(localStorage.getItem("af-profile") || "{}") }; }
-  catch { return defaultProfile; }
+  try {
+    const raw = JSON.parse(localStorage.getItem("af-profile") || "{}");
+    return {
+      name: typeof raw.name === "string" ? raw.name.slice(0, 30) : defaultProfile.name,
+      level: allowedLevels.has(raw.level) ? raw.level : defaultProfile.level,
+      avatar: allowedAvatars.has(raw.avatar) ? raw.avatar : defaultProfile.avatar,
+      visited: Array.isArray(raw.visited) ? raw.visited.filter(Number.isInteger).filter(i => i >= 0 && i < 26) : []
+    };
+  } catch { return defaultProfile; }
 };
 
 const loadSettings = () => {
-  try { return { ...defaults, ...JSON.parse(localStorage.getItem("af-settings") || "{}") }; }
-  catch { return defaults; }
+  try {
+    const raw = JSON.parse(localStorage.getItem("af-settings") || "{}");
+    return {
+      repeat: raw.repeat === true,
+      order: raw.order === "series" ? "series" : "random",
+      autoVoice: raw.autoVoice === true,
+      speed: Number.isFinite(Number(raw.speed)) ? Math.min(1.1, Math.max(.4, Number(raw.speed))) : defaults.speed
+    };
+  } catch { return defaults; }
 };
 
 export default function App() {
@@ -45,7 +61,7 @@ export default function App() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const [visited, setVisited] = useState(new Set());
+  const [visited, setVisited] = useState(() => new Set(profile.visited));
   const [used, setUsed] = useState(new Set());
   const [nextAnimating, setNextAnimating] = useState(false);
   const flippedRef = useRef(false);
@@ -82,7 +98,9 @@ export default function App() {
   }, [screen, flipped, index, settings.autoVoice]);
 
   useEffect(() => localStorage.setItem("af-settings", JSON.stringify(settings)), [settings]);
-  useEffect(() => localStorage.setItem("af-profile", JSON.stringify(profile)), [profile]);
+  useEffect(() => {
+    localStorage.setItem("af-profile", JSON.stringify({ ...profile, visited: [...visited] }));
+  }, [profile, visited]);
 
   // Never allow queued/previous speech to play while the card is hidden.
   // This is especially important on mobile browsers where speech can survive
@@ -399,7 +417,12 @@ function ProfileDialog({ open, close, profile, setProfile }) {
   }, [open, profile]);
 
   const save = () => {
-    setProfile({ ...draft, name: draft.name.trim() || "Little Learner" });
+    const safeName = typeof draft.name === "string" ? draft.name.trim().slice(0, 30) : "Little Learner";
+    setProfile({
+      name: safeName || "Little Learner",
+      level: allowedLevels.has(draft.level) ? draft.level : "LKG",
+      avatar: allowedAvatars.has(draft.avatar) ? draft.avatar : "🦊"
+    });
     close();
   };
 
@@ -412,7 +435,7 @@ function ProfileDialog({ open, close, profile, setProfile }) {
       <DialogContent dividers>
         <Stack spacing={2}>
           <TextField label="Child's name" value={draft.name}
-            onChange={e => setDraft(x => ({ ...x, name: e.target.value.slice(0, 30) }))}
+            onChange={e => setDraft(x => ({ ...x, name: String(e.target.value).slice(0, 30) }))}
             autoFocus fullWidth />
           <Select fullWidth value={draft.level}
             onChange={e => setDraft(x => ({ ...x, level: e.target.value }))}>
