@@ -42,11 +42,25 @@ Deno.serve(async req => {
     const action = body.action;
 
     if (action === "list") {
-      const { data, error } = await service.from("profiles")
+      const { data: profiles, error: profileError } = await service.from("profiles")
         .select("id,username,name,level,avatar,role,active,created_at")
         .order("created_at", { ascending: true });
-      if (error) throw error;
-      return json({ users: data || [] });
+      if (profileError) throw profileError;
+
+      const users = await Promise.all((profiles || []).map(async profile => {
+        const { data: accessRows, error: accessError } = await service
+          .from("user_access").select("section,enabled").eq("user_id", profile.id);
+        if (accessError) throw accessError;
+        const { data: progressRows, error: progressError } = await service
+          .from("user_progress").select("level,visited").eq("user_id", profile.id);
+        if (progressError) throw progressError;
+        return {
+          ...profile,
+          access: (accessRows || []).filter(x => x.enabled).map(x => x.section),
+          visited: (progressRows || []).find(x => x.level === profile.level)?.visited || []
+        };
+      }));
+      return json({ users });
     }
 
     if (action === "create") {
