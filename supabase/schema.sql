@@ -35,8 +35,8 @@ revoke all on public.profiles from anon, authenticated;
 revoke all on public.user_access from anon, authenticated;
 revoke all on public.user_progress from anon, authenticated;
 
-grant select, update on public.profiles to authenticated;
-grant select, insert, update, delete on public.user_access to authenticated;
+grant select on public.profiles to authenticated;
+grant select on public.user_access to authenticated;
 grant select, insert, update on public.user_progress to authenticated;
 
 drop policy if exists "profiles_self_select" on public.profiles;
@@ -82,3 +82,25 @@ create index if not exists user_progress_user_id_idx on public.user_progress(use
 -- select 'AUTH_USER_UUID', section, true
 -- from unnest(array['home','learn','games','worksheets','progress']) as section
 -- on conflict (user_id, section) do update set enabled = excluded.enabled;
+
+-- Users may edit only their own learner-facing profile fields.
+-- They cannot change role or active state from the browser.
+create or replace function public.update_my_profile(
+  p_name text,
+  p_level text,
+  p_avatar text
+)
+returns void
+language sql
+security definer
+set search_path = ''
+as $$
+  update public.profiles
+  set name = left(coalesce(p_name, 'Little Learner'), 30),
+      level = case when p_level in ('LKG','UKG','Class 1') then p_level else level end,
+      avatar = case when p_avatar in ('🦊','🐼','🐯','🐰','🐸','🦁') then p_avatar else avatar end
+  where id = (select auth.uid());
+$$;
+
+revoke all on function public.update_my_profile(text, text, text) from public;
+grant execute on function public.update_my_profile(text, text, text) to authenticated;
