@@ -59,9 +59,11 @@ export async function getAccount(userId) {
 
 export async function saveProfile(userId, profile) {
   if (!supabase) return;
-  const { error } = await supabase.from("profiles").update({
-    name: profile.name, level: profile.level, avatar: profile.avatar
-  }).eq("id", userId);
+  const { error } = await supabase.rpc("update_my_profile", {
+    p_name: profile.name,
+    p_level: profile.level,
+    p_avatar: profile.avatar
+  });
   if (error) throw error;
 }
 
