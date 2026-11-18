@@ -28,6 +28,44 @@ const defaults = { repeat: false, order: "random", autoVoice: false, speed: 0.7 
 const defaultProfile = { name: "Little Learner", level: "LKG", avatar: "🦊", visited: [] };
 const allowedLevels = new Set(["LKG", "UKG", "Class 1"]);
 const allowedAvatars = new Set(["🦊","🐼","🐯","🐰","🐸","🦁"]);
+const USERS_KEY = "af-users-v1";
+const SESSION_KEY = "af-session-v1";
+const ACCESS_OPTIONS = [
+  { key: "home", label: "Home" },
+  { key: "learn", label: "Learn ABC" },
+  { key: "games", label: "Games" },
+  { key: "worksheets", label: "Worksheets" },
+  { key: "progress", label: "My Progress" }
+];
+
+const loadUsers = () => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
+    if (!Array.isArray(raw)) return [];
+    return raw.filter(u => u && typeof u.username === "string" && typeof u.password === "string").map(u => ({
+      id: String(u.id || u.username),
+      username: u.username.slice(0, 40),
+      password: u.password,
+      name: typeof u.name === "string" ? u.name.slice(0, 30) : "Little Learner",
+      level: allowedLevels.has(u.level) ? u.level : "LKG",
+      avatar: allowedAvatars.has(u.avatar) ? u.avatar : "🦊",
+      role: u.role === "admin" ? "admin" : "user",
+      active: u.active !== false,
+      access: Array.isArray(u.access) ? u.access.filter(x => ACCESS_OPTIONS.some(o => o.key === x)) : ["home"],
+      visited: Array.isArray(u.visited) ? u.visited.filter(Number.isInteger).filter(i => i >= 0 && i < 26) : []
+    }));
+  } catch { return []; }
+};
+
+const loadSession = () => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+    return raw && typeof raw.username === "string" ? raw : null;
+  } catch { return null; }
+};
+
+const saveUsers = users => localStorage.setItem(USERS_KEY, JSON.stringify(users));
+
 
 const loadProfile = () => {
   try {
@@ -54,7 +92,9 @@ const loadSettings = () => {
 };
 
 export default function App() {
-  const [screen, setScreen] = useState("home");
+  const [screen, setScreen] = useState(() => loadSession() ? "home" : "auth");
+  const [session, setSession] = useState(loadSession);
+  const [users, setUsers] = useState(loadUsers);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState(loadSettings);
   const [profile, setProfile] = useState(loadProfile);
@@ -137,6 +177,19 @@ export default function App() {
   })), []);
 
   const current = cards[index % cards.length];
+  const isAdmin = session?.role === "admin";
+  const canAccess = target => isAdmin || Boolean(session?.access?.includes(target));
+  const goTo = target => {
+    if (!session) return setScreen("auth");
+    if (!canAccess(target)) return;
+    setScreen(target);
+  };
+  const logout = () => {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    localStorage.removeItem(SESSION_KEY);
+    setSession(null);
+    setScreen("auth");
+  };
   const progress = ((visited.size + (flipped ? 1 : 0)) / cards.length) * 100;
 
   const speak = (text, lang = "en-IN") => {
@@ -226,6 +279,7 @@ export default function App() {
   };
 
   const start = () => {
+    if (!canAccess("learn")) return;
     // Starting a new learning session must always begin silently.
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     setVisited(new Set());
@@ -241,10 +295,29 @@ export default function App() {
     setScreen("learn");
   };
 
+  if (screen === "auth") {
+    return <AuthScreen
+      users={users}
+      setUsers={setUsers}
+      onLogin={(u) => {
+        const safe = { username: u.username, role: u.role, access: u.access || ["home"] };
+        localStorage.setItem(SESSION_KEY, JSON.stringify(safe));
+        setSession(safe);
+        setProfile({ name: u.name || "Little Learner", level: u.level || "LKG", avatar: u.avatar || "🦊", visited: u.visited || [] });
+        setVisited(new Set(u.visited || []));
+        setScreen("home");
+      }}
+    />;
+  }
+
+  if (screen === "admin") {
+    return <AdminScreen users={users} setUsers={setUsers} onBack={() => setScreen("home")} />;
+  }
+
   if (screen === "home") {
     return (
       <Box sx={pageSx}>
-        <Header onSettings={() => setSettingsOpen(true)} />
+        <Header onSettings={() => setSettingsOpen(true)} onAdmin={isAdmin ? () => setScreen("admin") : undefined} onLogout={logout} />
         <Container maxWidth="lg" sx={{ py: { xs: 1.5, md: 3 } }}>
           <Paper className="profile-panel" sx={{ p: { xs: 1.5, md: 2 }, mb: 2 }}>
             <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -307,10 +380,10 @@ export default function App() {
           </Stack>
 
           <Box sx={tileGrid}>
-            <HomeTile emoji="🔤" title="Learn ABC" subtitle="Flip & discover letters" tone="#e5f3ff" onClick={start} />
-            <HomeTile emoji="🎮" title="Games" subtitle="Learn by playing" tone="#e9e7ff" onClick={() => setScreen("games")} />
-            <HomeTile emoji="📝" title="Worksheets" subtitle="Practice & print" tone="#fff0d9" onClick={() => setScreen("worksheets")} />
-            <HomeTile emoji="🏆" title="My Progress" subtitle="See learning journey" tone="#e2f8ec" onClick={() => setScreen("progress")} />
+            <HomeTile emoji="🔤" title="Learn ABC" subtitle="Flip & discover letters" tone="#e5f3ff" onClick={canAccess("learn") ? start : undefined} />
+            <HomeTile emoji="🎮" title="Games" subtitle="Learn by playing" tone="#e9e7ff" onClick={() => goTo("games")} />
+            <HomeTile emoji="📝" title="Worksheets" subtitle="Practice & print" tone="#fff0d9" onClick={() => goTo("worksheets")} />
+            <HomeTile emoji="🏆" title="My Progress" subtitle="See learning journey" tone="#e2f8ec" onClick={() => goTo("progress")} />
           </Box>
 
           <Paper sx={{ mt: 2.5, p: { xs: 1.7, md: 2.2 }, borderRadius: 4, bgcolor: "#fff", border: "1px solid #ececf5", boxShadow: "0 10px 30px rgba(42,49,93,.06)" }}>
@@ -339,15 +412,15 @@ export default function App() {
     );
   }
 
-  if (screen === "games") return <Games onBack={() => setScreen("home")} onStart={start} />;
-  if (screen === "worksheets") return <Worksheets onBack={() => setScreen("home")} />;
-  if (screen === "progress") return <Progress onBack={() => setScreen("home")} visited={visited.size} total={cards.length} />
+  if (screen === "games") return <Games onBack={() => goTo("home")} onStart={start} />;
+  if (screen === "worksheets") return <Worksheets onBack={() => goTo("home")} />;
+  if (screen === "progress") return <Progress onBack={() => goTo("home")} visited={visited.size} total={cards.length} />
   return (
     <Box sx={pageSx}>
       <Header back={() => setScreen("home")} onSettings={() => setSettingsOpen(true)} />
       <Container className="learn-container" maxWidth="sm" sx={{ pb: 6 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-          <Typography fontWeight={900}>Letter {index + 1} of {cards.length}</Typography>
+          <Typography fontWeight={900}>Letter {current.upper}</Typography>
           <Chip size="small" label={settings.order === "random" ? "Random" : "A → Z"} />
         </Stack>
         <LinearProgress value={Math.min(progress, 100)} variant="determinate"
@@ -409,6 +482,131 @@ export default function App() {
 }
 
 
+
+function AuthScreen({ users, setUsers, onLogin }) {
+  const [mode, setMode] = useState(users.some(u => u.role === "admin") ? "login" : "setup");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+
+  const submit = () => {
+    setError("");
+    const u = username.trim().toLowerCase();
+    if (!u || password.length < 4) return setError("Username और password सही भरें.");
+    if (mode === "setup") {
+      if (users.some(x => x.role === "admin")) return setMode("login");
+      const admin = {
+        id: "admin-" + Date.now(), username: u, password,
+        name: name.trim() || "Administrator", level: "Class 1", avatar: "🦁",
+        role: "admin", active: true, access: ACCESS_OPTIONS.map(x => x.key), visited: []
+      };
+      const next = [admin, ...users]; setUsers(next); saveUsers(next); onLogin(admin); return;
+    }
+    const found = users.find(x => x.username.toLowerCase() === u && x.password === password);
+    if (!found || !found.active) return setError("Login failed या account inactive है.");
+    onLogin(found);
+  };
+
+  return <Box sx={{ ...pageSx, minHeight: "100vh", display: "grid", placeItems: "center", p: 2 }}>
+    <Paper sx={{ width: "100%", maxWidth: 430, p: { xs: 2.5, sm: 4 }, borderRadius: 4, boxShadow: "0 24px 70px rgba(45,48,90,.12)" }}>
+      <Stack spacing={2}>
+        <Box sx={{ textAlign: "center" }}>
+          <img className="brand-logo" src={`${import.meta.env.BASE_URL}logo.svg`} alt="Alphabet Flipper" />
+          <Typography variant="h4" fontWeight={1000} sx={{ mt: 1 }}>Alphabet Flipper</Typography>
+          <Typography color="text.secondary" fontWeight={700}>{mode === "setup" ? "First-time admin setup" : "Sign in to continue"}</Typography>
+        </Box>
+        {mode === "setup" && <TextField label="Admin name" value={name} onChange={e => setName(e.target.value)} fullWidth />}
+        <TextField label={mode === "setup" ? "Admin username" : "Username"} value={username} onChange={e => setUsername(e.target.value)} fullWidth autoComplete="username" />
+        <TextField label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} fullWidth autoComplete={mode === "setup" ? "new-password" : "current-password"} />
+        {error && <Typography color="error" fontWeight={800}>{error}</Typography>}
+        <Button variant="contained" size="large" onClick={submit} sx={{ py: 1.5, borderRadius: 3, fontWeight: 950 }}>
+          {mode === "setup" ? "Create Admin & Continue" : "Login"}
+        </Button>
+        <Typography variant="caption" color="text.secondary">
+          Prototype auth is browser-local. Production authentication and authorization must be moved to a server/backend.
+        </Typography>
+      </Stack>
+    </Paper>
+  </Box>;
+}
+
+function AdminScreen({ users, setUsers, onBack }) {
+  const [draft, setDraft] = useState({ username: "", password: "", name: "", level: "LKG", access: ["home","learn","games","worksheets","progress"] });
+  const [error, setError] = useState("");
+
+  const addUser = () => {
+    const username = draft.username.trim().toLowerCase();
+    if (!username || draft.password.length < 4) return setError("Username और password required हैं.");
+    if (users.some(u => u.username.toLowerCase() === username)) return setError("Username already exists.");
+    const user = {
+      id: "user-" + Date.now(), username, password: draft.password,
+      name: draft.name.trim() || "Little Learner", level: draft.level, avatar: "🦊",
+      role: "user", active: true, access: [...draft.access], visited: []
+    };
+    const next = [...users, user]; setUsers(next); saveUsers(next);
+    setDraft({ username: "", password: "", name: "", level: "LKG", access: ["home","learn","games","worksheets","progress"] });
+    setError("");
+  };
+
+  const updateUser = (id, patch) => {
+    const next = users.map(u => u.id === id ? { ...u, ...patch } : u);
+    setUsers(next); saveUsers(next);
+  };
+
+  const removeUser = id => {
+    const target = users.find(u => u.id === id);
+    if (!target || target.role === "admin") return;
+    const next = users.filter(u => u.id !== id); setUsers(next); saveUsers(next);
+  };
+
+  return <Box sx={pageSx}>
+    <Header back={onBack} onSettings={() => {}} />
+    <Container maxWidth="lg" sx={{ py: 3 }}>
+      <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={2} sx={{ mb: 2 }}>
+        <Box><Typography variant="h3" fontWeight={1000}>Admin Dashboard</Typography><Typography color="text.secondary">Users, access and learner accounts.</Typography></Box>
+        <Chip label={`${users.filter(u => u.role === "user").length} registered users`} color="primary" />
+      </Stack>
+      <Paper sx={{ p: 2.2, borderRadius: 3, mb: 2 }}>
+        <Typography fontWeight={1000} sx={{ mb: 1.5 }}>Add User</Typography>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(4,1fr)" }, gap: 1.2 }}>
+          <TextField size="small" label="Name" value={draft.name} onChange={e => setDraft(x => ({ ...x, name: e.target.value }))} />
+          <TextField size="small" label="Username" value={draft.username} onChange={e => setDraft(x => ({ ...x, username: e.target.value }))} />
+          <TextField size="small" label="Password" type="password" value={draft.password} onChange={e => setDraft(x => ({ ...x, password: e.target.value }))} />
+          <Select size="small" value={draft.level} onChange={e => setDraft(x => ({ ...x, level: e.target.value }))}>
+            <MenuItem value="LKG">LKG</MenuItem><MenuItem value="UKG">UKG</MenuItem><MenuItem value="Class 1">Class 1</MenuItem>
+          </Select>
+        </Box>
+        <Typography fontWeight={900} sx={{ mt: 2, mb: .8 }}>Access</Typography>
+        <Stack direction="row" flexWrap="wrap" gap={1}>
+          {ACCESS_OPTIONS.map(o => <FormControlLabel key={o.key}
+            control={<Switch checked={draft.access.includes(o.key)} onChange={e => setDraft(x => ({ ...x, access: e.target.checked ? [...new Set([...x.access, o.key])] : x.access.filter(k => k !== o.key) }))} />}
+            label={o.label} />)}
+        </Stack>
+        {error && <Typography color="error" fontWeight={800} sx={{ mt: 1 }}>{error}</Typography>}
+        <Button variant="contained" onClick={addUser} sx={{ mt: 1.5, borderRadius: 2.5, fontWeight: 950 }}>Add User</Button>
+      </Paper>
+      <Box sx={{ display: "grid", gap: 1.2 }}>
+        {users.map(u => <Paper key={u.id} sx={{ p: 1.8, borderRadius: 3 }}>
+          <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} alignItems={{ md: "center" }}>
+            <Avatar>{u.avatar}</Avatar>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography fontWeight={1000}>{u.name} <Chip size="small" label={u.role} sx={{ ml: .5 }} /></Typography>
+              <Typography variant="body2" color="text.secondary">@{u.username} • {u.level} • {u.visited?.length || 0}/26 letters</Typography>
+            </Box>
+            <FormControlLabel control={<Switch checked={u.active !== false} disabled={u.role === "admin"} onChange={e => updateUser(u.id, { active: e.target.checked })} />} label="Active" />
+            <Button color="error" variant="outlined" disabled={u.role === "admin"} onClick={() => removeUser(u.id)}>Delete</Button>
+          </Stack>
+          <Stack direction="row" flexWrap="wrap" gap={.5} sx={{ mt: 1 }}>
+            {ACCESS_OPTIONS.map(o => <Chip key={o.key} size="small" label={o.label} color={u.access?.includes(o.key) ? "primary" : "default"} variant={u.access?.includes(o.key) ? "filled" : "outlined"} />)}
+          </Stack>
+        </Paper>)}
+      </Box>
+    </Container>
+  </Box>;
+}
+
+
 function ProfileDialog({ open, close, profile, setProfile }) {
   const [draft, setDraft] = useState(profile);
 
@@ -421,7 +619,8 @@ function ProfileDialog({ open, close, profile, setProfile }) {
     setProfile({
       name: safeName || "Little Learner",
       level: allowedLevels.has(draft.level) ? draft.level : "LKG",
-      avatar: allowedAvatars.has(draft.avatar) ? draft.avatar : "🦊"
+      avatar: allowedAvatars.has(draft.avatar) ? draft.avatar : "🦊",
+      visited: profile.visited || []
     });
     close();
   };
@@ -553,7 +752,7 @@ function Progress({ onBack, visited, total }) {
   </Container></Box>;
 }
 
-function Header({ back, onSettings }) {
+function Header({ back, onSettings, onAdmin, onLogout }) {
   return (
     <AppBar position="sticky" color="transparent" elevation={0} sx={{ backdropFilter: "blur(14px)", zIndex: 5 }}>
       <Toolbar sx={{ maxWidth: 900, width: "100%", mx: "auto" }}>
@@ -562,7 +761,11 @@ function Header({ back, onSettings }) {
   <img className="brand-logo" src={`${import.meta.env.BASE_URL}logo.svg`} alt="Alphabet Flipper" />
   <Typography fontWeight={950} className="brand-name">Alphabet Flipper</Typography>
 </Box>
-        <IconButton onClick={onSettings} aria-label="Settings"><SettingsIcon /></IconButton>
+        <Stack direction="row" spacing={.5}>
+          {onAdmin && <Button size="small" variant="outlined" onClick={onAdmin} sx={{ fontWeight: 900 }}>Admin</Button>}
+          {onLogout && <Button size="small" variant="text" onClick={onLogout} sx={{ fontWeight: 900 }}>Logout</Button>}
+          <IconButton onClick={onSettings} aria-label="Settings"><SettingsIcon /></IconButton>
+        </Stack>
       </Toolbar>
     </AppBar>
   );
