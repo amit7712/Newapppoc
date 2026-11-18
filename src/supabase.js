@@ -75,24 +75,8 @@ export async function saveProgress(userId, level, visited) {
 
 export async function listUsers() {
   if (!supabase) return [];
-  const { data, error } = await supabase.from("profiles")
-    .select("id,username,name,level,avatar,role,active,created_at")
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-
-  return Promise.all((data || []).map(async row => {
-    const { data: accessRows, error: accessError } = await supabase
-      .from("user_access").select("section,enabled").eq("user_id", row.id);
-    if (accessError) throw accessError;
-    const { data: progressRows, error: progressError } = await supabase
-      .from("user_progress").select("level,visited").eq("user_id", row.id);
-    if (progressError) throw progressError;
-    return normalizeAccount({
-      ...row,
-      access: accessRows?.filter(x => x.enabled).map(x => x.section) || ["home"],
-      visited: progressRows?.find(x => x.level === row.level)?.visited || []
-    });
-  }));
+  const result = await adminUserAction("list", {});
+  return (result?.users || []).map(normalizeAccount);
 }
 
 export async function adminUserAction(action, payload) {
