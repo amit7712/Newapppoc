@@ -23,6 +23,10 @@ import CelebrationIcon from "@mui/icons-material/Celebration";
 import EditIcon from "@mui/icons-material/Edit";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { alphabet, PHONICS_SOUNDS } from "./alphabet.js";
+import {
+  supabaseConfigured, supabase, signIn, signOut, getAccount,
+  saveProfile, saveProgress, listUsers, adminUserAction
+} from "./supabase.js";
 
 const defaults = { repeat: false, order: "random", autoVoice: false, speed: 0.7 };
 const defaultProfile = { name: "Little Learner", level: "LKG", avatar: "🦊", visited: [] };
@@ -92,13 +96,15 @@ const loadSettings = () => {
 };
 
 export default function App() {
-  const [screen, setScreen] = useState(() => loadSession() ? "home" : "auth");
-  const [session, setSession] = useState(loadSession);
-  const [users, setUsers] = useState(loadUsers);
+  const [screen, setScreen] = useState(() => !supabaseConfigured && loadSession() ? "home" : "auth");
+  const [session, setSession] = useState(() => !supabaseConfigured ? loadSession() : null);
+  const [users, setUsers] = useState(() => !supabaseConfigured ? loadUsers() : []);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState(loadSettings);
-  const [profile, setProfile] = useState(loadProfile);
+  const [profile, setProfile] = useState(() => !supabaseConfigured ? loadProfile() : defaultProfile);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [authLoading, setAuthLoading] = useState(supabaseConfigured);
+  const [authError, setAuthError] = useState("");
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [visited, setVisited] = useState(() => new Set(profile.visited));
@@ -107,6 +113,66 @@ export default function App() {
   const flippedRef = useRef(false);
   const hasRenderedLearnRef = useRef(false);
   useEffect(() => { flippedRef.current = flipped; }, [flipped]);
+
+  useEffect(() => {
+    if (!supabaseConfigured || !supabase) return;
+    let alive = true;
+    (async () => {
+      try {
+        const { data: { session: remoteSession } } = await supabase.auth.getSession();
+        if (remoteSession?.user) {
+          const account = await getAccount(remoteSession.user.id);
+          if (alive && account && account.active) {
+            setSession(account);
+            setProfile({ name: account.name, level: account.level, avatar: account.avatar, visited: account.visited });
+            setVisited(new Set(account.visited));
+            setScreen("home");
+          } else if (alive) {
+            await supabase.auth.signOut();
+            setScreen("auth");
+          }
+        } else if (alive) {
+          setScreen("auth");
+        }
+      } catch (error) {
+        if (alive) setAuthError(error?.message || "Unable to load your account.");
+      } finally {
+        if (alive) setAuthLoading(false);
+      }
+    })();
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, remoteSession) => {
+      if (!alive || !remoteSession?.user) return;
+      try {
+        const account = await getAccount(remoteSession.user.id);
+        if (!account?.active) {
+          await supabase.auth.signOut();
+          setScreen("auth");
+          setAuthError("This account is inactive.");
+          return;
+        }
+        setSession(account);
+        setProfile({ name: account.name, level: account.level, avatar: account.avatar, visited: account.visited });
+        setVisited(new Set(account.visited));
+        setScreen("home");
+      } catch (error) {
+        if (alive) setAuthError(error?.message || "Unable to load your account.");
+      }
+    });
+    return () => {
+      alive = false;
+      listener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!supabaseConfigured || !session?.id) return;
+    saveProfile(session.id, profile).catch(error => setAuthError(error?.message || "Profile save failed."));
+  }, [profile.name, profile.level, profile.avatar, session?.id]);
+
+  useEffect(() => {
+    if (!supabaseConfigured || !session?.id) return;
+    saveProgress(session.id, profile.level, visited).catch(error => setAuthError(error?.message || "Progress save failed."));
+  }, [visited, profile.level, session?.id]);
 
   // Auto voice is driven ONLY by the actual revealed state.
   // There is deliberately no speech timer attached to the initial/start state.
@@ -186,8 +252,14 @@ export default function App() {
   };
   const logout = () => {
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-    localStorage.removeItem(SESSION_KEY);
+    if (supabaseConfigured) {
+      signOut().catch(() => {});
+    } else {
+      localStorage.removeItem(SESSION_KEY);
+    }
     setSession(null);
+    setProfile(defaultProfile);
+    setVisited(new Set());
     setScreen("auth");
   };
   const progress = ((visited.size + (flipped ? 1 : 0)) / cards.length) * 100;
@@ -295,13 +367,25 @@ export default function App() {
     setScreen("learn");
   };
 
+  if (authLoading) {
+    return <Box sx={{ ...pageSx, minHeight: "100vh", display: "grid", placeItems: "center" }}>
+      <Typography fontWeight={900}>Loading Alphabet Flipper…</Typography>
+    </Box>;
+  }
+
   if (screen === "auth") {
     return <AuthScreen
       users={users}
       setUsers={setUsers}
       onLogin={(u) => {
-        const safe = { username: u.username, role: u.role, access: u.access || ["home"] };
-        localStorage.setItem(SESSION_KEY, JSON.stringify(safe));
+        const safe = {
+          id: u.id,
+          username: u.username,
+          role: u.role,
+          active: u.active !== false,
+          access: u.access || ["home"]
+        };
+        if (!supabaseConfigured) localStorage.setItem(SESSION_KEY, JSON.stringify(safe));
         setSession(safe);
         setProfile({ name: u.name || "Little Learner", level: u.level || "LKG", avatar: u.avatar || "🦊", visited: u.visited || [] });
         setVisited(new Set(u.visited || []));
@@ -484,16 +568,28 @@ export default function App() {
 
 
 function AuthScreen({ users, setUsers, onLogin }) {
-  const [mode, setMode] = useState(users.some(u => u.role === "admin") ? "login" : "setup");
+  const [mode, setMode] = useState(supabaseConfigured ? "login" : (users.some(u => u.role === "admin") ? "login" : "setup"));
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
 
-  const submit = () => {
+  const submit = async () => {
     setError("");
     const u = username.trim().toLowerCase();
     if (!u || password.length < 4) return setError("Username और password सही भरें.");
+
+    if (supabaseConfigured) {
+      try {
+        const account = await signIn(u, password);
+        if (!account?.active) return setError("Account inactive है.");
+        onLogin(account);
+      } catch (e) {
+        setError(e?.message || "Login failed.");
+      }
+      return;
+    }
+
     if (mode === "setup") {
       if (users.some(x => x.role === "admin")) return setMode("login");
       const admin = {
@@ -503,6 +599,7 @@ function AuthScreen({ users, setUsers, onLogin }) {
       };
       const next = [admin, ...users]; setUsers(next); saveUsers(next); onLogin(admin); return;
     }
+
     const found = users.find(x => x.username.toLowerCase() === u && x.password === password);
     if (!found || !found.active) return setError("Login failed या account inactive है.");
     onLogin(found);
@@ -516,7 +613,7 @@ function AuthScreen({ users, setUsers, onLogin }) {
           <Typography variant="h4" fontWeight={1000} sx={{ mt: 1 }}>Alphabet Flipper</Typography>
           <Typography color="text.secondary" fontWeight={700}>{mode === "setup" ? "First-time admin setup" : "Sign in to continue"}</Typography>
         </Box>
-        {mode === "setup" && <TextField label="Admin name" value={name} onChange={e => setName(e.target.value)} fullWidth />}
+        {!supabaseConfigured && mode === "setup" && <TextField label="Admin name" value={name} onChange={e => setName(e.target.value)} fullWidth />}
         <TextField label={mode === "setup" ? "Admin username" : "Username"} value={username} onChange={e => setUsername(e.target.value)} fullWidth autoComplete="username" />
         <TextField label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} fullWidth autoComplete={mode === "setup" ? "new-password" : "current-password"} />
         {error && <Typography color="error" fontWeight={800}>{error}</Typography>}
@@ -524,7 +621,9 @@ function AuthScreen({ users, setUsers, onLogin }) {
           {mode === "setup" ? "Create Admin & Continue" : "Login"}
         </Button>
         <Typography variant="caption" color="text.secondary">
-          Prototype auth is browser-local. Production authentication and authorization must be moved to a server/backend.
+          {supabaseConfigured
+            ? "Secure sign-in is handled by Supabase Auth. User accounts are created only from the admin panel."
+            : "Prototype auth is browser-local. Add Supabase configuration to enable secure Auth + database storage."}
         </Typography>
       </Stack>
     </Paper>
@@ -534,30 +633,72 @@ function AuthScreen({ users, setUsers, onLogin }) {
 function AdminScreen({ users, setUsers, onBack }) {
   const [draft, setDraft] = useState({ username: "", password: "", name: "", level: "LKG", access: ["home","learn","games","worksheets","progress"] });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(supabaseConfigured);
 
-  const addUser = () => {
+  useEffect(() => {
+    if (!supabaseConfigured) return;
+    let alive = true;
+    listUsers()
+      .then(rows => { if (alive) setUsers(rows); })
+      .catch(e => { if (alive) setError(e?.message || "Unable to load users."); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [setUsers]);
+
+  const addUser = async () => {
     const username = draft.username.trim().toLowerCase();
-    if (!username || draft.password.length < 4) return setError("Username और password required हैं.");
-    if (users.some(u => u.username.toLowerCase() === username)) return setError("Username already exists.");
-    const user = {
-      id: "user-" + Date.now(), username, password: draft.password,
-      name: draft.name.trim() || "Little Learner", level: draft.level, avatar: "🦊",
-      role: "user", active: true, access: [...draft.access], visited: []
-    };
-    const next = [...users, user]; setUsers(next); saveUsers(next);
-    setDraft({ username: "", password: "", name: "", level: "LKG", access: ["home","learn","games","worksheets","progress"] });
-    setError("");
+    if (!username || draft.password.length < 8) return setError("Username required है और password कम से कम 8 characters का होना चाहिए.");
+
+    try {
+      if (supabaseConfigured) {
+        await adminUserAction("create", {
+          username, password: draft.password, name: draft.name.trim() || "Little Learner",
+          level: draft.level, access: draft.access
+        });
+        setUsers(await listUsers());
+      } else {
+        if (users.some(u => u.username.toLowerCase() === username)) return setError("Username already exists.");
+        const user = {
+          id: "user-" + Date.now(), username, password: draft.password,
+          name: draft.name.trim() || "Little Learner", level: draft.level, avatar: "🦊",
+          role: "user", active: true, access: [...draft.access], visited: []
+        };
+        const next = [...users, user]; setUsers(next); saveUsers(next);
+      }
+      setDraft({ username: "", password: "", name: "", level: "LKG", access: ["home","learn","games","worksheets","progress"] });
+      setError("");
+    } catch (e) {
+      setError(e?.message || "Unable to create user.");
+    }
   };
 
-  const updateUser = (id, patch) => {
-    const next = users.map(u => u.id === id ? { ...u, ...patch } : u);
-    setUsers(next); saveUsers(next);
+  const updateUser = async (id, patch) => {
+    try {
+      if (supabaseConfigured) {
+        await adminUserAction("update", { id, ...patch });
+        setUsers(await listUsers());
+      } else {
+        const next = users.map(u => u.id === id ? { ...u, ...patch } : u);
+        setUsers(next); saveUsers(next);
+      }
+    } catch (e) {
+      setError(e?.message || "Unable to update user.");
+    }
   };
 
-  const removeUser = id => {
+  const removeUser = async id => {
     const target = users.find(u => u.id === id);
     if (!target || target.role === "admin") return;
-    const next = users.filter(u => u.id !== id); setUsers(next); saveUsers(next);
+    try {
+      if (supabaseConfigured) {
+        await adminUserAction("delete", { id });
+        setUsers(await listUsers());
+      } else {
+        const next = users.filter(u => u.id !== id); setUsers(next); saveUsers(next);
+      }
+    } catch (e) {
+      setError(e?.message || "Unable to delete user.");
+    }
   };
 
   return <Box sx={pageSx}>
@@ -584,7 +725,9 @@ function AdminScreen({ users, setUsers, onBack }) {
             label={o.label} />)}
         </Stack>
         {error && <Typography color="error" fontWeight={800} sx={{ mt: 1 }}>{error}</Typography>}
-        <Button variant="contained" onClick={addUser} sx={{ mt: 1.5, borderRadius: 2.5, fontWeight: 950 }}>Add User</Button>
+        <Button variant="contained" onClick={addUser} disabled={loading} sx={{ mt: 1.5, borderRadius: 2.5, fontWeight: 950 }}>
+          {loading ? "Loading…" : "Add User"}
+        </Button>
       </Paper>
       <Box sx={{ display: "grid", gap: 1.2 }}>
         {users.map(u => <Paper key={u.id} sx={{ p: 1.8, borderRadius: 3 }}>
@@ -598,7 +741,7 @@ function AdminScreen({ users, setUsers, onBack }) {
             <Button color="error" variant="outlined" disabled={u.role === "admin"} onClick={() => removeUser(u.id)}>Delete</Button>
           </Stack>
           <Stack direction="row" flexWrap="wrap" gap={.5} sx={{ mt: 1 }}>
-            {ACCESS_OPTIONS.map(o => <Chip key={o.key} size="small" label={o.label} color={u.access?.includes(o.key) ? "primary" : "default"} variant={u.access?.includes(o.key) ? "filled" : "outlined"} />)}
+            {ACCESS_OPTIONS.map(o => <Chip key={o.key} size="small" label={o.label} color={u.access?.includes(o.key) ? "primary" : "default"} variant={u.access?.includes(o.key) ? "filled" : "outlined"} onClick={() => u.role !== "admin" && updateUser(u.id, { access: u.access?.includes(o.key) ? u.access.filter(k => k !== o.key) : [...(u.access || []), o.key] })} />)}
           </Stack>
         </Paper>)}
       </Box>
