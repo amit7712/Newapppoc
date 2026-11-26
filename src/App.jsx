@@ -32,6 +32,12 @@ const allowedLevels = new Set(["LKG", "UKG", "Class 1"]);
 const allowedAvatars = new Set(["🦊","🐼","🐯","🐰","🐸","🦁"]);
 const USERS_KEY = "af-users-v1";
 const SESSION_KEY = "af-session-v1";
+const DEFAULT_ADMIN = {
+  id: "admin-default", username: "admin", password: "admin1234",
+  name: "Administrator", level: "Class 1", avatar: "🦁", role: "admin",
+  active: true, access: ACCESS_OPTIONS.map(x => x.key), visited: []
+};
+
 const ACCESS_OPTIONS = [
   { key: "home", label: "Home" },
   { key: "learn", label: "Learn ABC" },
@@ -43,7 +49,7 @@ const ACCESS_OPTIONS = [
 const loadUsers = () => {
   try {
     const raw = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-    if (!Array.isArray(raw)) return [];
+    if (!Array.isArray(raw)) return [DEFAULT_ADMIN];
     return raw.filter(u => u && typeof u.username === "string" && typeof u.password === "string").map(u => ({
       id: String(u.id || u.username),
       username: u.username.slice(0, 40),
@@ -56,7 +62,7 @@ const loadUsers = () => {
       access: Array.isArray(u.access) ? u.access.filter(x => ACCESS_OPTIONS.some(o => o.key === x)) : ["home"],
       visited: Array.isArray(u.visited) ? u.visited.filter(Number.isInteger).filter(i => i >= 0 && i < 26) : []
     }));
-  } catch { return []; }
+  } catch { return [DEFAULT_ADMIN]; }
 };
 
 const loadSession = () => {
