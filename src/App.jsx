@@ -617,3 +617,169 @@ function ProfileDialog({ open, close, profile, setProfile }) {
                 <Button key={emoji} variant={draft.avatar === emoji ? "contained" : "outlined"}
                   onClick={() => setDraft(x => ({ ...x, avatar: emoji }))}
                   sx={{ minWidth: 48, fontSize: 24, borderRadius: 2 }}>
+                </Button>
+              ))}
+            </Stack>
+          </Box>
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={close}>Cancel</Button>
+        <Button variant="contained" onClick={save}>Save</Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+const pageSx = {
+  minHeight: "100vh",
+  bgcolor: "#f7f8fc",
+  color: "#18213d"
+};
+
+const tileGrid = {
+  display: "grid",
+  gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(4, 1fr)" },
+  gap: 1.4
+};
+
+const cardFaceSx = {
+  minHeight: { xs: 380, md: 440 },
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  textAlign: "center",
+  p: 3
+};
+
+function Header({ back, onSettings, onAdmin }) {
+  return (
+    <AppBar position="static" color="transparent" elevation={0}>
+      <Toolbar sx={{ maxWidth: 1100, width: "100%", mx: "auto" }}>
+        {back && <IconButton onClick={back}><ArrowBackIcon /></IconButton>}
+        <Typography sx={{ flex: 1 }} fontWeight={1000}>Alphabet Flipper</Typography>
+        {onAdmin && <Button size="small" onClick={onAdmin} sx={{ mr: 1 }}>Admin</Button>}
+        {onSettings && <IconButton onClick={onSettings}><SettingsIcon /></IconButton>}
+      </Toolbar>
+    </AppBar>
+  );
+}
+
+function HomeTile({ emoji, title, subtitle, tone, onClick }) {
+  return (
+    <Paper
+      onClick={onClick}
+      sx={{
+        p: { xs: 1.5, md: 2 },
+        minHeight: 135,
+        borderRadius: 4,
+        bgcolor: tone,
+        cursor: onClick ? "pointer" : "default",
+        border: "1px solid rgba(0,0,0,.05)"
+      }}
+    >
+      <Typography sx={{ fontSize: 42 }}>{emoji}</Typography>
+      <Typography fontWeight={1000}>{title}</Typography>
+      <Typography variant="body2" color="text.secondary">{subtitle}</Typography>
+    </Paper>
+  );
+}
+
+function Sound({ label, disabled, fn }) {
+  return (
+    <Button
+      fullWidth
+      variant="outlined"
+      disabled={disabled}
+      startIcon={<VolumeUpIcon />}
+      onClick={e => { e.stopPropagation(); fn(); }}
+      sx={{ borderRadius: 3, fontWeight: 900 }}
+    >
+      {label}
+    </Button>
+  );
+}
+
+function Settings({ open, close, settings, setSettings }) {
+  return (
+    <Dialog open={open} onClose={close} fullWidth maxWidth="xs">
+      <DialogTitle fontWeight={950}>
+        Settings
+        <IconButton onClick={close} sx={{ float: "right" }}><CloseIcon /></IconButton>
+      </DialogTitle>
+      <DialogContent dividers>
+        <FormControlLabel
+          control={<Switch checked={settings.repeat} onChange={e => setSettings(x => ({ ...x, repeat: e.target.checked }))} />}
+          label="Repeat Alphabets"
+        />
+        <Typography mt={2} fontWeight={900}>Learning Order</Typography>
+        <Select fullWidth value={settings.order} onChange={e => setSettings(x => ({ ...x, order: e.target.value }))} sx={{ mt: 1 }}>
+          <MenuItem value="random">Random</MenuItem>
+          <MenuItem value="series">A → Z</MenuItem>
+        </Select>
+        <FormControlLabel
+          sx={{ mt: 1 }}
+          control={<Switch checked={settings.autoVoice} onChange={e => setSettings(x => ({ ...x, autoVoice: e.target.checked }))} />}
+          label="Auto Voice"
+        />
+        <Typography mt={2} fontWeight={900}>Voice Speed: {settings.speed.toFixed(1)}×</Typography>
+        <Slider
+          min={.4} max={1.1} step={.1} value={settings.speed}
+          onChange={(_, value) => setSettings(x => ({ ...x, speed: value }))}
+        />
+      </DialogContent>
+      <DialogActions><Button onClick={close} variant="contained">Done</Button></DialogActions>
+    </Dialog>
+  );
+}
+
+function Games({ onBack, onStart }) {
+  return (
+    <Box sx={pageSx}>
+      <Header back={onBack} />
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Typography variant="h4" fontWeight={1000}>Games</Typography>
+        <Typography color="text.secondary" sx={{ mt: .5, mb: 2 }}>Choose a playful ABC activity.</Typography>
+        <Paper sx={{ p: 3, borderRadius: 4 }}>
+          <Typography fontSize={48}>🎮</Typography>
+          <Typography fontWeight={950}>Alphabet Flip Challenge</Typography>
+          <Button variant="contained" onClick={onStart} sx={{ mt: 2 }}>Start Learning</Button>
+        </Paper>
+      </Container>
+    </Box>
+  );
+}
+
+function Worksheets({ onBack }) {
+  return (
+    <Box sx={pageSx}>
+      <Header back={onBack} />
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Typography variant="h4" fontWeight={1000}>Worksheets</Typography>
+        <Paper sx={{ mt: 2, p: 3, borderRadius: 4 }}>
+          <Typography fontSize={48}>📝</Typography>
+          <Typography fontWeight={950}>ABC practice worksheets</Typography>
+          <Typography color="text.secondary" sx={{ mt: .5 }}>Practice material is available from this section.</Typography>
+        </Paper>
+      </Container>
+    </Box>
+  );
+}
+
+function Progress({ onBack, visited, total }) {
+  const percent = total ? Math.round((visited / total) * 100) : 0;
+  return (
+    <Box sx={pageSx}>
+      <Header back={onBack} />
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Typography variant="h4" fontWeight={1000}>My Progress</Typography>
+        <Paper sx={{ mt: 2, p: 3, borderRadius: 4 }}>
+          <Typography fontWeight={950}>Letters explored: {visited}/{total}</Typography>
+          <LinearProgress variant="determinate" value={percent} sx={{ mt: 2, height: 10, borderRadius: 10 }} />
+          <Typography color="text.secondary" sx={{ mt: 1 }}>{percent}% complete</Typography>
+        </Paper>
+      </Container>
+    </Box>
+  );
+}
