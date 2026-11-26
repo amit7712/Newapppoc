@@ -569,15 +569,15 @@ export default function App() {
 
 function AuthScreen({ users, setUsers, onLogin }) {
   const [mode, setMode] = useState(supabaseConfigured ? "login" : (users.some(u => u.role === "admin") ? "login" : "setup"));
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
 
   const submit = async () => {
     setError("");
-    const u = username.trim().toLowerCase();
-    if (!u || password.length < 4) return setError("Username और password सही भरें.");
+    const u = email.trim().toLowerCase();
+    if (!u || !u.includes("@") || password.length < 4) return setError("Email और password सही भरें.");
 
     if (supabaseConfigured) {
       try {
@@ -593,14 +593,14 @@ function AuthScreen({ users, setUsers, onLogin }) {
     if (mode === "setup") {
       if (users.some(x => x.role === "admin")) return setMode("login");
       const admin = {
-        id: "admin-" + Date.now(), username: u, password,
+        id: "admin-" + Date.now(), username: u.split("@")[0], email: u, password,
         name: name.trim() || "Administrator", level: "Class 1", avatar: "🦁",
         role: "admin", active: true, access: ACCESS_OPTIONS.map(x => x.key), visited: []
       };
       const next = [admin, ...users]; setUsers(next); saveUsers(next); onLogin(admin); return;
     }
 
-    const found = users.find(x => x.username.toLowerCase() === u && x.password === password);
+    const found = users.find(x => (x.email || x.username).toLowerCase() === u && x.password === password);
     if (!found || !found.active) return setError("Login failed या account inactive है.");
     onLogin(found);
   };
@@ -614,7 +614,7 @@ function AuthScreen({ users, setUsers, onLogin }) {
           <Typography color="text.secondary" fontWeight={700}>{mode === "setup" ? "First-time admin setup" : "Sign in to continue"}</Typography>
         </Box>
         {!supabaseConfigured && mode === "setup" && <TextField label="Admin name" value={name} onChange={e => setName(e.target.value)} fullWidth />}
-        <TextField label={mode === "setup" ? "Admin username" : "Username"} value={username} onChange={e => setUsername(e.target.value)} fullWidth autoComplete="username" />
+        <TextField label={mode === "setup" ? "Admin email" : "Email"} value={email} onChange={e => setEmail(e.target.value)} fullWidth type="email" autoComplete="email" />
         <TextField label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} fullWidth autoComplete={mode === "setup" ? "new-password" : "current-password"} />
         {error && <Typography color="error" fontWeight={800}>{error}</Typography>}
         <Button variant="contained" size="large" onClick={submit} sx={{ py: 1.5, borderRadius: 3, fontWeight: 950 }}>
@@ -631,7 +631,7 @@ function AuthScreen({ users, setUsers, onLogin }) {
 }
 
 function AdminScreen({ users, setUsers, onBack }) {
-  const [draft, setDraft] = useState({ username: "", password: "", name: "", level: "LKG", access: ["home","learn","games","worksheets","progress"] });
+  const [draft, setDraft] = useState({ email: "", username: "", password: "", name: "", level: "LKG", access: ["home","learn","games","worksheets","progress"] });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(supabaseConfigured);
 
@@ -646,26 +646,27 @@ function AdminScreen({ users, setUsers, onBack }) {
   }, [setUsers]);
 
   const addUser = async () => {
+    const email = draft.email.trim().toLowerCase();
     const username = draft.username.trim().toLowerCase();
-    if (!username || draft.password.length < 8) return setError("Username required है और password कम से कम 8 characters का होना चाहिए.");
+    if (!email || !email.includes("@") || !username || draft.password.length < 8) return setError("Email, username और password सही भरें.");
 
     try {
       if (supabaseConfigured) {
         await adminUserAction("create", {
-          username, password: draft.password, name: draft.name.trim() || "Little Learner",
+          email, username, password: draft.password, name: draft.name.trim() || "Little Learner",
           level: draft.level, access: draft.access
         });
         setUsers(await listUsers());
       } else {
         if (users.some(u => u.username.toLowerCase() === username)) return setError("Username already exists.");
         const user = {
-          id: "user-" + Date.now(), username, password: draft.password,
+          id: "user-" + Date.now(), username, email, password: draft.password,
           name: draft.name.trim() || "Little Learner", level: draft.level, avatar: "🦊",
           role: "user", active: true, access: [...draft.access], visited: []
         };
         const next = [...users, user]; setUsers(next); saveUsers(next);
       }
-      setDraft({ username: "", password: "", name: "", level: "LKG", access: ["home","learn","games","worksheets","progress"] });
+      setDraft({ email: "", username: "", password: "", name: "", level: "LKG", access: ["home","learn","games","worksheets","progress"] });
       setError("");
     } catch (e) {
       setError(e?.message || "Unable to create user.");
@@ -711,6 +712,7 @@ function AdminScreen({ users, setUsers, onBack }) {
       <Paper sx={{ p: 2.2, borderRadius: 3, mb: 2 }}>
         <Typography fontWeight={1000} sx={{ mb: 1.5 }}>Add User</Typography>
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(4,1fr)" }, gap: 1.2 }}>
+          <TextField size="small" label="Email" type="email" value={draft.email} onChange={e => setDraft(x => ({ ...x, email: e.target.value }))} />
           <TextField size="small" label="Name" value={draft.name} onChange={e => setDraft(x => ({ ...x, name: e.target.value }))} />
           <TextField size="small" label="Username" value={draft.username} onChange={e => setDraft(x => ({ ...x, username: e.target.value }))} />
           <TextField size="small" label="Password" type="password" value={draft.password} onChange={e => setDraft(x => ({ ...x, password: e.target.value }))} />
