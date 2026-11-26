@@ -38,7 +38,7 @@ const ACCESS_OPTIONS = [
 ];
 
 const DEFAULT_ADMIN = {
-  id: "admin-default", username: "admin", password: "admin1234",
+  id: "admin-default", username: "admin",
   name: "Administrator", level: "Class 1", avatar: "🦁", role: "admin",
   active: true, access: ACCESS_OPTIONS.map(x => x.key), visited: []
 };
@@ -48,10 +48,9 @@ const loadUsers = () => {
   try {
     const raw = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
     if (!Array.isArray(raw)) return [DEFAULT_ADMIN];
-    const users = raw.filter(u => u && typeof u.username === "string" && typeof u.password === "string").map(u => ({
+    const users = raw.filter(u => u && typeof u.username === "string").map(u => ({
       id: String(u.id || u.username),
       username: u.username.slice(0, 40),
-      password: u.password,
       name: typeof u.name === "string" ? u.name.slice(0, 30) : "Little Learner",
       level: allowedLevels.has(u.level) ? u.level : "LKG",
       avatar: allowedAvatars.has(u.avatar) ? u.avatar : "🦊",
@@ -179,8 +178,7 @@ export default function App() {
   })), []);
 
   const current = cards[index % cards.length];
-  const isAdmin = true;
-  const canAccess = () => true;
+  const canAccess = () => true; // auth-admin-2 is intentionally login-free
   const goTo = target => setScreen(target);
   const progress = ((visited.size + (flipped ? 1 : 0)) / cards.length) * 100;
 
@@ -487,23 +485,23 @@ export default function App() {
 
 
 function AdminScreen({ users, setUsers, onBack }) {
-  const [draft, setDraft] = useState({ username: "", password: "", name: "", level: "LKG", access: ["home","learn","games","worksheets","progress"] });
+  const [draft, setDraft] = useState({ username: "", name: "", level: "LKG", access: ["home","learn","games","worksheets","progress"] });
   const [error, setError] = useState("");
 
 
   const addUser = async () => {
     const username = draft.username.trim().toLowerCase();
-    if (!username || draft.password.length < 8) return setError("Username required है और password कम से कम 8 characters का होना चाहिए.");
+    if (!username) return setError("Username required है.");
 
     try {
       if (users.some(u => u.username.toLowerCase() === username)) return setError("Username already exists.");
       const user = {
-        id: "user-" + Date.now(), username, password: draft.password,
+        id: "user-" + Date.now(), username,
         name: draft.name.trim() || "Little Learner", level: draft.level, avatar: "🦊",
         role: "user", active: true, access: [...draft.access], visited: []
       };
       const next = [...users, user]; setUsers(next); saveUsers(next);
-      setDraft({ username: "", password: "", name: "", level: "LKG", access: ["home","learn","games","worksheets","progress"] });
+      setDraft({ username: "", name: "", level: "LKG", access: ["home","learn","games","worksheets","progress"] });
       setError("");
     } catch (e) {
       setError(e?.message || "Unable to create user.");
@@ -541,7 +539,6 @@ function AdminScreen({ users, setUsers, onBack }) {
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(4,1fr)" }, gap: 1.2 }}>
           <TextField size="small" label="Name" value={draft.name} onChange={e => setDraft(x => ({ ...x, name: e.target.value }))} />
           <TextField size="small" label="Username" value={draft.username} onChange={e => setDraft(x => ({ ...x, username: e.target.value }))} />
-          <TextField size="small" label="Password" type="password" value={draft.password} onChange={e => setDraft(x => ({ ...x, password: e.target.value }))} />
           <Select size="small" value={draft.level} onChange={e => setDraft(x => ({ ...x, level: e.target.value }))}>
             <MenuItem value="LKG">LKG</MenuItem><MenuItem value="UKG">UKG</MenuItem><MenuItem value="Class 1">Class 1</MenuItem>
           </Select>
