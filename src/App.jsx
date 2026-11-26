@@ -23,10 +23,8 @@ import CelebrationIcon from "@mui/icons-material/Celebration";
 import EditIcon from "@mui/icons-material/Edit";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { alphabet, PHONICS_SOUNDS } from "./alphabet.js";
-import {
-  supabaseConfigured, supabase, signIn, signOut, getAccount,
-  saveProfile, saveProgress, listUsers, adminUserAction
-} from "./supabase.js";
+
+const supabaseConfigured = false;
 
 const defaults = { repeat: false, order: "random", autoVoice: false, speed: 0.7 };
 const defaultProfile = { name: "Little Learner", level: "LKG", avatar: "🦊", visited: [] };
