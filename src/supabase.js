@@ -8,7 +8,7 @@ export const supabase = supabaseConfigured ? createClient(url, publishableKey, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 }) : null;
 
-export const usernameToEmail = value => {\n  const normalized = String(value || "").trim().toLowerCase();\n  return normalized.includes("@") ? normalized : `${normalized}@login.alphabetflipper.app`;\n};
+export const usernameToEmail = value => {\n  const normalized = String(value || "").trim().toLowerCase();\n  return normalized.includes("@") ? normalized : "${normalized}@login.alphabetflipper.app";\n};
 
 export const normalizeAccount = row => ({
   id: String(row.id),
@@ -25,7 +25,7 @@ export const normalizeAccount = row => ({
 export async function signIn(email, password) {
   if (!supabase) throw new Error("Supabase is not configured.");
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: usernameToEmail(username), password
+    email: usernameToEmail(email), password
   });
   if (error) throw error;
   return getAccount(data.user.id);
