@@ -24,14 +24,11 @@ import EditIcon from "@mui/icons-material/Edit";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { alphabet, PHONICS_SOUNDS } from "./alphabet.js";
 
-const supabaseConfigured = false;
-
 const defaults = { repeat: false, order: "random", autoVoice: false, speed: 0.7 };
 const defaultProfile = { name: "Little Learner", level: "LKG", avatar: "🦊", visited: [] };
 const allowedLevels = new Set(["LKG", "UKG", "Class 1"]);
 const allowedAvatars = new Set(["🦊","🐼","🐯","🐰","🐸","🦁"]);
 const USERS_KEY = "af-users-v1";
-const SESSION_KEY = "af-session-v1";
 const ACCESS_OPTIONS = [
   { key: "home", label: "Home" },
   { key: "learn", label: "Learn ABC" },
@@ -67,13 +64,6 @@ const loadUsers = () => {
   } catch { return [DEFAULT_ADMIN]; }
 };
 
-const loadSession = () => {
-  try {
-    const raw = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
-    return raw && typeof raw.username === "string" ? raw : null;
-  } catch { return null; }
-};
-
 const saveUsers = users => localStorage.setItem(USERS_KEY, JSON.stringify(users));
 
 
@@ -102,15 +92,15 @@ const loadSettings = () => {
 };
 
 export default function App() {
-  const [screen, setScreen] = useState(() => !supabaseConfigured && loadSession() ? "home" : "auth");
-  const [session, setSession] = useState(() => !supabaseConfigured ? loadSession() : null);
-  const [users, setUsers] = useState(() => !supabaseConfigured ? loadUsers() : []);
+  // auth-admin-2 is intentionally login-free. The app opens directly and
+  // browser-local learner metadata remains visible and editable.
+  const [screen, setScreen] = useState("home");
+  const [session] = useState(DEFAULT_ADMIN);
+  const [users, setUsers] = useState(loadUsers);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState(loadSettings);
-  const [profile, setProfile] = useState(() => !supabaseConfigured ? loadProfile() : defaultProfile);
+  const [profile, setProfile] = useState(loadProfile);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [authLoading, setAuthLoading] = useState(supabaseConfigured);
-  const [authError, setAuthError] = useState("");
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [visited, setVisited] = useState(() => new Set(profile.visited));
@@ -119,66 +109,6 @@ export default function App() {
   const flippedRef = useRef(false);
   const hasRenderedLearnRef = useRef(false);
   useEffect(() => { flippedRef.current = flipped; }, [flipped]);
-
-  useEffect(() => {
-    if (!supabaseConfigured || !supabase) return;
-    let alive = true;
-    (async () => {
-      try {
-        const { data: { session: remoteSession } } = await supabase.auth.getSession();
-        if (remoteSession?.user) {
-          const account = await getAccount(remoteSession.user.id);
-          if (alive && account && account.active) {
-            setSession(account);
-            setProfile({ name: account.name, level: account.level, avatar: account.avatar, visited: account.visited });
-            setVisited(new Set(account.visited));
-            setScreen("home");
-          } else if (alive) {
-            await supabase.auth.signOut();
-            setScreen("auth");
-          }
-        } else if (alive) {
-          setScreen("auth");
-        }
-      } catch (error) {
-        if (alive) setAuthError(error?.message || "Unable to load your account.");
-      } finally {
-        if (alive) setAuthLoading(false);
-      }
-    })();
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, remoteSession) => {
-      if (!alive || !remoteSession?.user) return;
-      try {
-        const account = await getAccount(remoteSession.user.id);
-        if (!account?.active) {
-          await supabase.auth.signOut();
-          setScreen("auth");
-          setAuthError("This account is inactive.");
-          return;
-        }
-        setSession(account);
-        setProfile({ name: account.name, level: account.level, avatar: account.avatar, visited: account.visited });
-        setVisited(new Set(account.visited));
-        setScreen("home");
-      } catch (error) {
-        if (alive) setAuthError(error?.message || "Unable to load your account.");
-      }
-    });
-    return () => {
-      alive = false;
-      listener?.subscription?.unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!supabaseConfigured || !session?.id) return;
-    saveProfile(session.id, profile).catch(error => setAuthError(error?.message || "Profile save failed."));
-  }, [profile.name, profile.level, profile.avatar, session?.id]);
-
-  useEffect(() => {
-    if (!supabaseConfigured || !session?.id) return;
-    saveProgress(session.id, profile.level, visited).catch(error => setAuthError(error?.message || "Progress save failed."));
-  }, [visited, profile.level, session?.id]);
 
   // Auto voice is driven ONLY by the actual revealed state.
   // There is deliberately no speech timer attached to the initial/start state.
@@ -249,25 +179,9 @@ export default function App() {
   })), []);
 
   const current = cards[index % cards.length];
-  const isAdmin = session?.role === "admin";
-  const canAccess = target => isAdmin || Boolean(session?.access?.includes(target));
-  const goTo = target => {
-    if (!session) return setScreen("auth");
-    if (!canAccess(target)) return;
-    setScreen(target);
-  };
-  const logout = () => {
-    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-    if (supabaseConfigured) {
-      signOut().catch(() => {});
-    } else {
-      localStorage.removeItem(SESSION_KEY);
-    }
-    setSession(null);
-    setProfile(defaultProfile);
-    setVisited(new Set());
-    setScreen("auth");
-  };
+  const isAdmin = true;
+  const canAccess = () => true;
+  const goTo = target => setScreen(target);
   const progress = ((visited.size + (flipped ? 1 : 0)) / cards.length) * 100;
 
   const speak = (text, lang = "en-IN") => {
@@ -373,33 +287,6 @@ export default function App() {
     setScreen("learn");
   };
 
-  if (authLoading) {
-    return <Box sx={{ ...pageSx, minHeight: "100vh", display: "grid", placeItems: "center" }}>
-      <Typography fontWeight={900}>Loading Alphabet Flipper…</Typography>
-    </Box>;
-  }
-
-  if (screen === "auth") {
-    return <AuthScreen
-      users={users}
-      setUsers={setUsers}
-      onLogin={(u) => {
-        const safe = {
-          id: u.id,
-          username: u.username,
-          role: u.role,
-          active: u.active !== false,
-          access: u.access || ["home"]
-        };
-        if (!supabaseConfigured) localStorage.setItem(SESSION_KEY, JSON.stringify(safe));
-        setSession(safe);
-        setProfile({ name: u.name || "Little Learner", level: u.level || "LKG", avatar: u.avatar || "🦊", visited: u.visited || [] });
-        setVisited(new Set(u.visited || []));
-        setScreen("home");
-      }}
-    />;
-  }
-
   if (screen === "admin") {
     return <AdminScreen users={users} setUsers={setUsers} onBack={() => setScreen("home")} />;
   }
@@ -407,7 +294,7 @@ export default function App() {
   if (screen === "home") {
     return (
       <Box sx={pageSx}>
-        <Header onSettings={() => setSettingsOpen(true)} onAdmin={isAdmin ? () => setScreen("admin") : undefined} onLogout={logout} />
+        <Header onSettings={() => setSettingsOpen(true)} onAdmin={() => setScreen("admin")} />
         <Container maxWidth="lg" sx={{ py: { xs: 1.5, md: 3 } }}>
           <Paper className="profile-panel" sx={{ p: { xs: 1.5, md: 2 }, mb: 2 }}>
             <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -477,6 +364,31 @@ export default function App() {
           </Box>
 
           <Paper sx={{ mt: 2.5, p: { xs: 1.7, md: 2.2 }, borderRadius: 4, bgcolor: "#fff", border: "1px solid #ececf5", boxShadow: "0 10px 30px rgba(42,49,93,.06)" }}>
+            <Typography fontWeight={1000}>Stored Metadata</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>
+              Login के बिना browser में saved learner, settings, progress और users का data यहाँ visible है।
+            </Typography>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2,1fr)" }, gap: 1.2, mt: 1.5 }}>
+              <Paper variant="outlined" sx={{ p: 1.3, borderRadius: 2.5 }}>
+                <Typography variant="caption" color="text.secondary">Learner</Typography>
+                <Typography fontWeight={900}>{profile.name} • {profile.level} • {profile.avatar}</Typography>
+              </Paper>
+              <Paper variant="outlined" sx={{ p: 1.3, borderRadius: 2.5 }}>
+                <Typography variant="caption" color="text.secondary">Progress</Typography>
+                <Typography fontWeight={900}>{visited.size}/26 letters • {Math.round((visited.size / 26) * 100)}%</Typography>
+              </Paper>
+              <Paper variant="outlined" sx={{ p: 1.3, borderRadius: 2.5 }}>
+                <Typography variant="caption" color="text.secondary">Learning Settings</Typography>
+                <Typography fontWeight={900}>{settings.order === "series" ? "A → Z" : "Random"} • Repeat {settings.repeat ? "On" : "Off"} • Voice {settings.autoVoice ? "On" : "Off"} • Speed {settings.speed.toFixed(1)}×</Typography>
+              </Paper>
+              <Paper variant="outlined" sx={{ p: 1.3, borderRadius: 2.5 }}>
+                <Typography variant="caption" color="text.secondary">Stored Users</Typography>
+                <Typography fontWeight={900}>{users.length} total • {users.filter(u => u.role === "user").length} learners</Typography>
+              </Paper>
+            </Box>
+          </Paper>
+
+          <Paper sx={{ mt: 2.5, p: { xs: 1.7, md: 2.2 }, borderRadius: 4, bgcolor: "#fff", border: "1px solid #ececf5", boxShadow: "0 10px 30px rgba(42,49,93,.06)" }}>
             <Stack direction="row" spacing={1.4} alignItems="center">
               <Box className="reward-icon">🏆</Box>
               <Box sx={{ flex: 1 }}>
@@ -489,6 +401,7 @@ export default function App() {
               <Typography fontWeight={1000} color="primary.main">{Math.min(visited.size, 5)}/5</Typography>
             </Stack>
           </Paper>
+
         </Container>
 
         <ProfileDialog
@@ -573,104 +486,23 @@ export default function App() {
 
 
 
-function AuthScreen({ users, setUsers, onLogin }) {
-  const [mode, setMode] = useState(supabaseConfigured ? "login" : (users.some(u => u.role === "admin") ? "login" : "setup"));
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [error, setError] = useState("");
-
-  const submit = async () => {
-    setError("");
-    const u = username.trim().toLowerCase();
-    if (!u || password.length < 4) return setError("Username और password सही भरें.");
-
-    if (supabaseConfigured) {
-      try {
-        const account = await signIn(u, password);
-        if (!account?.active) return setError("Account inactive है.");
-        onLogin(account);
-      } catch (e) {
-        setError(e?.message || "Login failed.");
-      }
-      return;
-    }
-
-    if (mode === "setup") {
-      if (users.some(x => x.role === "admin")) return setMode("login");
-      const admin = {
-        id: "admin-" + Date.now(), username: u, password,
-        name: name.trim() || "Administrator", level: "Class 1", avatar: "🦁",
-        role: "admin", active: true, access: ACCESS_OPTIONS.map(x => x.key), visited: []
-      };
-      const next = [admin, ...users]; setUsers(next); saveUsers(next); onLogin(admin); return;
-    }
-
-    const found = users.find(x => x.username.toLowerCase() === u && x.password === password);
-    if (!found || !found.active) return setError("Login failed या account inactive है.");
-    onLogin(found);
-  };
-
-  return <Box sx={{ ...pageSx, minHeight: "100vh", display: "grid", placeItems: "center", p: 2 }}>
-    <Paper sx={{ width: "100%", maxWidth: 430, p: { xs: 2.5, sm: 4 }, borderRadius: 4, boxShadow: "0 24px 70px rgba(45,48,90,.12)" }}>
-      <Stack spacing={2}>
-        <Box sx={{ textAlign: "center" }}>
-          <img className="brand-logo" src={`${import.meta.env.BASE_URL}logo.svg`} alt="Alphabet Flipper" />
-          <Typography variant="h4" fontWeight={1000} sx={{ mt: 1 }}>Alphabet Flipper</Typography>
-          <Typography color="text.secondary" fontWeight={700}>{mode === "setup" ? "First-time admin setup" : "Sign in to continue"}</Typography>
-        </Box>
-        {!supabaseConfigured && mode === "setup" && <TextField label="Admin name" value={name} onChange={e => setName(e.target.value)} fullWidth />}
-        <TextField label={mode === "setup" ? "Admin username" : "Username"} value={username} onChange={e => setUsername(e.target.value)} fullWidth autoComplete="username" />
-        <TextField label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} fullWidth autoComplete={mode === "setup" ? "new-password" : "current-password"} />
-        {error && <Typography color="error" fontWeight={800}>{error}</Typography>}
-        <Button variant="contained" size="large" onClick={submit} sx={{ py: 1.5, borderRadius: 3, fontWeight: 950 }}>
-          {mode === "setup" ? "Create Admin & Continue" : "Login"}
-        </Button>
-        <Typography variant="caption" color="text.secondary">
-          {supabaseConfigured
-            ? "Secure sign-in is handled by Supabase Auth. User accounts are created only from the admin panel."
-            : "Prototype auth is browser-local. Add Supabase configuration to enable secure Auth + database storage."}
-        </Typography>
-      </Stack>
-    </Paper>
-  </Box>;
-}
-
 function AdminScreen({ users, setUsers, onBack }) {
   const [draft, setDraft] = useState({ username: "", password: "", name: "", level: "LKG", access: ["home","learn","games","worksheets","progress"] });
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(supabaseConfigured);
 
-  useEffect(() => {
-    if (!supabaseConfigured) return;
-    let alive = true;
-    listUsers()
-      .then(rows => { if (alive) setUsers(rows); })
-      .catch(e => { if (alive) setError(e?.message || "Unable to load users."); })
-      .finally(() => { if (alive) setLoading(false); });
-    return () => { alive = false; };
-  }, [setUsers]);
 
   const addUser = async () => {
     const username = draft.username.trim().toLowerCase();
     if (!username || draft.password.length < 8) return setError("Username required है और password कम से कम 8 characters का होना चाहिए.");
 
     try {
-      if (supabaseConfigured) {
-        await adminUserAction("create", {
-          username, password: draft.password, name: draft.name.trim() || "Little Learner",
-          level: draft.level, access: draft.access
-        });
-        setUsers(await listUsers());
-      } else {
-        if (users.some(u => u.username.toLowerCase() === username)) return setError("Username already exists.");
-        const user = {
-          id: "user-" + Date.now(), username, password: draft.password,
-          name: draft.name.trim() || "Little Learner", level: draft.level, avatar: "🦊",
-          role: "user", active: true, access: [...draft.access], visited: []
-        };
-        const next = [...users, user]; setUsers(next); saveUsers(next);
-      }
+      if (users.some(u => u.username.toLowerCase() === username)) return setError("Username already exists.");
+      const user = {
+        id: "user-" + Date.now(), username, password: draft.password,
+        name: draft.name.trim() || "Little Learner", level: draft.level, avatar: "🦊",
+        role: "user", active: true, access: [...draft.access], visited: []
+      };
+      const next = [...users, user]; setUsers(next); saveUsers(next);
       setDraft({ username: "", password: "", name: "", level: "LKG", access: ["home","learn","games","worksheets","progress"] });
       setError("");
     } catch (e) {
@@ -680,13 +512,8 @@ function AdminScreen({ users, setUsers, onBack }) {
 
   const updateUser = async (id, patch) => {
     try {
-      if (supabaseConfigured) {
-        await adminUserAction("update", { id, ...patch });
-        setUsers(await listUsers());
-      } else {
-        const next = users.map(u => u.id === id ? { ...u, ...patch } : u);
-        setUsers(next); saveUsers(next);
-      }
+      const next = users.map(u => u.id === id ? { ...u, ...patch } : u);
+      setUsers(next); saveUsers(next);
     } catch (e) {
       setError(e?.message || "Unable to update user.");
     }
@@ -696,12 +523,7 @@ function AdminScreen({ users, setUsers, onBack }) {
     const target = users.find(u => u.id === id);
     if (!target || target.role === "admin") return;
     try {
-      if (supabaseConfigured) {
-        await adminUserAction("delete", { id });
-        setUsers(await listUsers());
-      } else {
-        const next = users.filter(u => u.id !== id); setUsers(next); saveUsers(next);
-      }
+      const next = users.filter(u => u.id !== id); setUsers(next); saveUsers(next);
     } catch (e) {
       setError(e?.message || "Unable to delete user.");
     }
@@ -731,8 +553,8 @@ function AdminScreen({ users, setUsers, onBack }) {
             label={o.label} />)}
         </Stack>
         {error && <Typography color="error" fontWeight={800} sx={{ mt: 1 }}>{error}</Typography>}
-        <Button variant="contained" onClick={addUser} disabled={loading} sx={{ mt: 1.5, borderRadius: 2.5, fontWeight: 950 }}>
-          {loading ? "Loading…" : "Add User"}
+        <Button variant="contained" onClick={addUser} sx={{ mt: 1.5, borderRadius: 2.5, fontWeight: 950 }}>
+          Add User
         </Button>
       </Paper>
       <Box sx={{ display: "grid", gap: 1.2 }}>
@@ -798,212 +620,3 @@ function ProfileDialog({ open, close, profile, setProfile }) {
                 <Button key={emoji} variant={draft.avatar === emoji ? "contained" : "outlined"}
                   onClick={() => setDraft(x => ({ ...x, avatar: emoji }))}
                   sx={{ minWidth: 48, fontSize: 24, borderRadius: 2 }}>
-                  {emoji}
-                </Button>
-              ))}
-            </Stack>
-          </Box>
-        </Stack>
-      </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
-        <Button onClick={close} variant="outlined" sx={{ borderRadius: 3, fontWeight: 900 }}>Cancel</Button>
-        <Button onClick={save} variant="contained" sx={{ borderRadius: 3, fontWeight: 900 }}>Save Profile</Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
-
-function HomeTile({ emoji, title, subtitle, tone, onClick }) {
-  return <Paper className="home-tile" onClick={onClick} sx={{ bgcolor: tone }}>
-    <Box className="tile-emoji">{emoji}</Box>
-    <Box sx={{ flex: 1 }}>
-      <Typography fontWeight={1000} fontSize={20}>{title}</Typography>
-      <Typography variant="body2" sx={{ color: "#626b83", fontWeight: 700 }}>{subtitle}</Typography>
-    </Box>
-    <Box className="tile-arrow"><ArrowForwardIcon /></Box>
-  </Paper>;
-}
-
-function Games({ onBack, onStart }) {
-  return <Box sx={pageSx}>
-    <Header back={onBack} onSettings={() => {}} />
-    <Container maxWidth="md" sx={{ py: 4 }}>
-      <Chip icon={<ExtensionIcon />} label="PLAY ZONE" sx={{ fontWeight: 950 }} />
-      <Typography variant="h3" fontWeight={1000} sx={{ mt: 1 }}>🎮 Games</Typography>
-      <Typography color="text.secondary" sx={{ mb: 3 }}>Choose a game to learn, play and earn stars.</Typography>
-      <Paper sx={{ p: 2.2, mb: 3, borderRadius: 4, bgcolor: "#fff", border: "1px solid #ececf5" }}>
-        <Typography fontWeight={950}>🎯 Game Zone</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>
-          Each game has its own activity. Alphabet Flipper is ready to play now; new games will be added here separately.
-        </Typography>
-      </Paper>
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2,1fr)" }, gap: 2 }}>
-        <GameCard emoji="🔤" title="Alphabet Flipper" subtitle="Flip letters, discover words and hear sounds." color="#e9e7ff" live onClick={onStart} />
-        <GameCard emoji="🧩" title="Letter Builder" subtitle="Build simple words with letter tiles." color="#e5f3ff" />
-        <GameCard emoji="🎯" title="Find the Letter" subtitle="Spot the letter hiding in the crowd." color="#e2f8ec" />
-        <GameCard emoji="🧠" title="Memory Match" subtitle="Match capital and small letters." color="#fff0d9" />
-      </Box>
-    </Container>
-  </Box>;
-}
-
-function GameCard({ emoji, title, subtitle, color, onClick, live }) {
-  const available = Boolean(onClick);
-  return <Paper className="game-card" onClick={available ? onClick : undefined}
-    sx={{ bgcolor: color, opacity: available ? 1 : .78, cursor: available ? "pointer" : "default" }}>
-    {live && <Chip label="PLAY NOW" size="small" color="secondary" sx={{ position: "absolute", top: 14, right: 14, fontWeight: 1000 }} />}
-    <Box className="game-emoji">{emoji}</Box>
-    <Typography fontWeight={1000} fontSize={21}>{title}</Typography>
-    <Typography color="text.secondary" fontWeight={700}>{subtitle}</Typography>
-    <Button variant="contained" endIcon={<ArrowForwardIcon />} disabled={!available}
-      sx={{ mt: 2, borderRadius: 3, fontWeight: 950 }}
-      onClick={available ? (e => { e.stopPropagation(); onClick(); }) : undefined}>
-      {live ? "Start" : "Coming Soon"}
-    </Button>
-  </Paper>;
-}
-
-function Worksheets({ onBack }) {
-  return <Box sx={pageSx}><Header back={onBack} onSettings={() => {}} /><Container maxWidth="md" sx={{ py: 5 }}>
-    <Chip icon={<AssignmentIcon />} label="PRACTICE ZONE" sx={{ fontWeight: 950 }} />
-    <Typography variant="h3" fontWeight={1000} sx={{ mt: 1 }}>📝 Worksheets</Typography>
-    <Typography color="text.secondary" sx={{ mb: 3 }}>Choose a practice activity. Worksheets stay separate from Games and Learning.</Typography>
-    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2,1fr)" }, gap: 2 }}>
-      <Paper className="game-card" sx={{ bgcolor: "#fff0d9" }}>
-        <Box className="game-emoji">✏️</Box>
-        <Typography fontWeight={1000} fontSize={21}>Alphabet Practice</Typography>
-        <Typography color="text.secondary" fontWeight={700}>Practice letters and simple words.</Typography>
-        <Button variant="contained" sx={{ mt: 2, borderRadius: 3, fontWeight: 950 }} onClick={() => window.print()}>
-          Print Practice Sheet
-        </Button>
-      </Paper>
-      <Paper className="game-card" sx={{ bgcolor: "#e5f3ff" }}>
-        <Box className="game-emoji">🔤</Box>
-        <Typography fontWeight={1000} fontSize={21}>Capital & Small</Typography>
-        <Typography color="text.secondary" fontWeight={700}>Practice matching uppercase and lowercase letters.</Typography>
-        <Button variant="outlined" disabled sx={{ mt: 2, borderRadius: 3, fontWeight: 950 }}>Coming Soon</Button>
-      </Paper>
-    </Box>
-  </Container></Box>;
-}
-
-function Progress({ onBack, visited, total }) {
-  const pct = total ? Math.round((visited / total) * 100) : 0;
-  return <Box sx={pageSx}><Header back={onBack} onSettings={() => {}} /><Container maxWidth="md" sx={{ py: 5 }}>
-    <Chip icon={<EmojiEventsIcon />} label="MY JOURNEY" sx={{ fontWeight: 950 }} />
-    <Typography variant="h3" fontWeight={1000} sx={{ mt: 1 }}>⭐ Progress</Typography>
-    <Paper sx={{ p: 3, borderRadius: 4, mt: 2 }}>
-      <Typography fontWeight={950}>Your learning journey</Typography>
-      <Typography sx={{ mt: 1 }}>{visited} of {total} letters explored</Typography>
-      <LinearProgress value={pct} variant="determinate" sx={{ height: 12, borderRadius: 8, mt: 2 }} />
-      <Typography color="text.secondary" sx={{ mt: 1 }}>{pct}% complete</Typography>
-    </Paper>
-  </Container></Box>;
-}
-
-function Header({ back, onSettings, onAdmin, onLogout }) {
-  return (
-    <AppBar position="sticky" color="transparent" elevation={0} sx={{ backdropFilter: "blur(14px)", zIndex: 5 }}>
-      <Toolbar sx={{ maxWidth: 900, width: "100%", mx: "auto" }}>
-        {back && <IconButton onClick={back} aria-label="Back"><ArrowBackIcon /></IconButton>}
-        <Box className="brand" sx={{ flex: 1 }}>
-  <img className="brand-logo" src={`${import.meta.env.BASE_URL}logo.svg`} alt="Alphabet Flipper" />
-  <Typography fontWeight={950} className="brand-name">Alphabet Flipper</Typography>
-</Box>
-        <Stack direction="row" spacing={.5}>
-          {onAdmin && <Button size="small" variant="outlined" onClick={onAdmin} sx={{ fontWeight: 900 }}>Admin</Button>}
-          {onLogout && <Button size="small" variant="text" onClick={onLogout} sx={{ fontWeight: 900 }}>Logout</Button>}
-          <IconButton onClick={onSettings} aria-label="Settings"><SettingsIcon /></IconButton>
-        </Stack>
-      </Toolbar>
-    </AppBar>
-  );
-}
-
-function Sound({ label, fn, disabled = false }) {
-  return (
-    <Button fullWidth variant="outlined" startIcon={<VolumeUpIcon />}
-      disabled={disabled}
-      onClick={e => { e.stopPropagation(); fn(); }}
-      sx={{ borderRadius: 3, fontWeight: 900, py: 1.2 }}>
-      {label}
-    </Button>
-  );
-}
-
-function Settings({ open, close, settings, setSettings }) {
-  return (
-    <Dialog open={open} onClose={close} fullWidth maxWidth="xs"
-      PaperProps={{ sx: { borderRadius: 4 } }}>
-      <DialogTitle fontWeight={950}>
-        Learning Settings
-        <IconButton onClick={close} sx={{ float: "right" }} aria-label="Close"><CloseIcon /></IconButton>
-      </DialogTitle>
-      <DialogContent dividers>
-        <FormControlLabel control={<Switch checked={settings.repeat}
-          onChange={e => setSettings(x => ({ ...x, repeat: e.target.checked }))} />}
-          label="Repeat Alphabets" />
-        <Typography mt={2} fontWeight={900}>Learning Order</Typography>
-        <Select fullWidth value={settings.order}
-          onChange={e => setSettings(x => ({ ...x, order: e.target.value }))} sx={{ mt: 1 }}>
-          <MenuItem value="random">Random</MenuItem>
-          <MenuItem value="series">A → Z</MenuItem>
-        </Select>
-        <FormControlLabel sx={{ mt: 1 }} control={<Switch checked={settings.autoVoice}
-          onChange={e => setSettings(x => ({ ...x, autoVoice: e.target.checked }))} />}
-          label="Auto Voice" />
-        <Typography mt={2} fontWeight={900}>Voice Speed: {settings.speed.toFixed(1)}×</Typography>
-        <Slider min={.4} max={1.1} step={.1} value={settings.speed}
-          onChange={(_, value) => setSettings(x => ({ ...x, speed: value }))} />
-      </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
-        <Button onClick={close} variant="contained" sx={{ borderRadius: 3, fontWeight: 900 }}>Done</Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
-
-const homeHero = {
-  position: "relative",
-  p: { xs: 0, md: 0 },
-  background: "transparent",
-  border: "0",
-  boxShadow: "none"
-};
-
-const tileGrid = {
-  display: "grid",
-  gridTemplateColumns: { xs: "repeat(2, minmax(0,1fr))", sm: "repeat(2,1fr)" },
-  gap: { xs: 1.2, sm: 2 }
-};
-
-const mainBtn = {
-  px: 3, py: 1.35, borderRadius: 1.75, fontWeight: 950,
-  boxShadow: "0 12px 30px rgba(108,99,255,.28)"
-};
-
-const secondaryBtn = {
-  px: 3, py: 1.35, borderRadius: 1.75, fontWeight: 950,
-  borderWidth: 2
-};
-
-const pageSx = {
-  minHeight: "100vh",
-  background: "radial-gradient(circle at 15% 10%, rgba(108,99,255,.16), transparent 28%), radial-gradient(circle at 90% 20%, rgba(255,108,168,.12), transparent 25%), #f7f8fc"
-};
-
-const heroSx = {
-  position: "relative", overflow: "hidden", borderRadius: 7, p: { xs: 3, md: 6 },
-  background: "linear-gradient(135deg,#ffffff 0%,#eef0ff 55%,#fdf1f8 100%)",
-  border: "1px solid rgba(108,99,255,.14)", boxShadow: "0 24px 70px rgba(45,48,90,.12)"
-};
-
-const primaryButtonSx = {
-  mt: 3, px: 4, py: 1.6, borderRadius: 4, fontWeight: 950,
-  boxShadow: "0 12px 30px rgba(108,99,255,.28)"
-};
-
-const cardFaceSx = {
-  minHeight: { xs: 390, md: 450 }, display: "grid", placeItems: "center",
-  textAlign: "center", p: 3
-};
