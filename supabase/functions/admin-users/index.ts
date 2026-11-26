@@ -64,46 +64,60 @@ Deno.serve(async req => {
     }
 
     if (action === "create") {
+      const email = String(body.email || "").trim().toLowerCase();
       const username = String(body.username || "").trim().toLowerCase();
       const password = String(body.password || "");
-      if (!/^[a-z0-9._-]{3,40}$/.test(username) || password.length < 8) {
-        return json({ error: "Username must be 3-40 characters and password at least 8 characters." }, 400);
+      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || !/^[a-z0-9._-]{3,40}$/.test(username) || password.length < 8) {
+        return json({ error: "Valid email, username (3-40 characters) and password (at least 8 characters) are required." }, 400);
       }
 
-      const { data: created, error: createError } = await service.auth.admin.createUser({
-        email: `${username}@login.alphabetflipper.app`,
-        password,
-        email_confirm: true,
-        user_metadata: { username }
-      });
-      if (createError) return json({ error: createError.message }, 400);
+      let userId = "";
+      const existing = await service.auth.admin.getUserByEmail(email);
+      if (existing.data?.user) {
+        userId = existing.data.user.id;
+        const { data: existingProfile } = await service.from("profiles")
+          .select("id,role").eq("id", userId).maybeSingle();
+        if (existingProfile?.role === "admin") {
+          return json({ error: "This email belongs to an admin account." }, 400);
+        }
+      } else {
+        const { data: created, error: createError } = await service.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: { username }
+        });
+        if (createError) return json({ error: createError.message }, 400);
+        userId = created.user.id;
+      }
 
-      const { error: profileError } = await service.from("profiles").insert({
-        id: created.user.id,
+      const { error: profileError } = await service.from("profiles").upsert({
+        id: userId,
         username,
         name: String(body.name || "Little Learner").slice(0, 30),
         level: ["LKG","UKG","Class 1"].includes(body.level) ? body.level : "LKG",
         avatar: ["🦊","🐼","🐯","🐰","🐸","🦁"].includes(body.avatar) ? body.avatar : "🦊",
         role: "user",
         active: true
-      });
+      }, { onConflict: "id" });
       if (profileError) {
-        await service.auth.admin.deleteUser(created.user.id);
+        if (!existing.data?.user) await service.auth.admin.deleteUser(userId);
         throw profileError;
       }
 
       const sections = Array.isArray(body.access) ? body.access : ["home"];
-      const { error: accessError } = await service.from("user_access").insert(
+      const { error: accessError } = await service.from("user_access").upsert(
         ["home","learn","games","worksheets","progress"].map(section => ({
-          user_id: created.user.id, section, enabled: sections.includes(section)
-        }))
+          user_id: userId, section, enabled: sections.includes(section)
+        })),
+        { onConflict: "user_id,section" }
       );
       if (accessError) {
-        await service.auth.admin.deleteUser(created.user.id);
+        if (!existing.data?.user) await service.auth.admin.deleteUser(userId);
         throw accessError;
       }
 
-      return json({ ok: true, id: created.user.id });
+      return json({ ok: true, id: userId });
     }
 
     if (action === "update") {
