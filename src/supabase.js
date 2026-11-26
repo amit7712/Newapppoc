@@ -8,7 +8,7 @@ export const supabase = supabaseConfigured ? createClient(url, publishableKey, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 }) : null;
 
-export const usernameToEmail = value => {\n  const normalized = String(value || "").trim().toLowerCase();\n  return normalized.includes("@") ? normalized : "${normalized}@login.alphabetflipper.app";\n};
+export const usernameToEmail = value => String(value || "").trim().toLowerCase();
 
 export const normalizeAccount = row => ({
   id: String(row.id),
