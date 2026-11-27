@@ -3,6 +3,9 @@ import { Box, Button, Chip, Container, FormControlLabel, IconButton, LinearProgr
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import VolumeUpIcon from "@mui/icons-material/VolumeUp";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import SettingsIcon from "@mui/icons-material/Settings";
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
@@ -91,8 +94,8 @@ export function AlphabetMatchingGame({onBack}) {
 
  return <Box sx={{minHeight:"100vh",bgcolor:"#f7f8fc"}}><Container maxWidth="md" sx={{py:3}}>
   <GameHeader onBack={onBack} title="Small → Capital Match" subtitle="Tap a letter to hear it, then match small → capital"/>
-  <Paper sx={{p:{xs:1.5,md:2.5},borderRadius:4}}>
-   <Stack direction={{xs:"column",sm:"row"}} spacing={1} justifyContent="space-between" alignItems={{sm:"center"}}>
+  <Paper sx={{p:{xs:1.5,md:2.5},borderRadius:5,border:"1px solid #e5e7ef",boxShadow:"0 12px 40px rgba(40,45,80,.08)"}}>
+   <Stack direction={{xs:"column",sm:"row"}} spacing={1} justifyContent="space-between" alignItems={{sm:"center"}} sx={{mb:1}}>
     <Chip label={"Round "+(round+1)} color="primary"/><Chip label={"Retries: "+attempts+"/5"} color={attempts<=1?"error":"default"}/><Chip label={Object.keys(matches).length+"/"+letters.length+" matched"}/>
    </Stack>
    <Stack direction="row" justifyContent="flex-end" sx={{mt:1}}>
@@ -117,10 +120,14 @@ export function AlphabetMatchingGame({onBack}) {
        Series = A→Z groups. Random = shuffled letters. Repeat On allows letters to appear again.
      </Typography>
    </Popover>
-   <LinearProgress variant="determinate" value={(Object.keys(matches).length/letters.length)*100} sx={{mt:2,height:10,borderRadius:10}}/>
+   <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{mt:2,mb:1}}>
+    <Typography fontWeight={900} color="text.secondary">Match the letters</Typography>
+    <Chip size="small" icon={<EmojiEventsIcon/>} label={Object.keys(matches).length===letters.length?"Round complete!":"Keep going"} color={Object.keys(matches).length===letters.length?"success":"default"}/>
+   </Stack>
+   <LinearProgress variant="determinate" value={(Object.keys(matches).length/letters.length)*100} sx={{height:10,borderRadius:10}}/>
    <Box sx={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:2,mt:3}}>
-    <Paper variant="outlined" sx={{p:1.5,borderRadius:3}}><Typography fontWeight={1000} sx={{mb:1}}>Small letters</Typography><Stack spacing={1}>{letters.map(l=><Button key={l} variant={selectedSmall===l?"contained":"outlined"} disabled={!!matches[l]||attempts===0} onClick={()=>chooseSmall(l)} sx={{fontSize:26,fontWeight:1000,textTransform:"none"}}>{l.toLowerCase()}{matches[l]&&" ✓"}</Button>)}</Stack></Paper>
-    <Paper variant="outlined" sx={{p:1.5,borderRadius:3}}><Typography fontWeight={1000} sx={{mb:1}}>Capital letters</Typography><Stack spacing={1}>{capitals.map(c=><Button key={c} variant={Object.values(matches).includes(c)?"contained":"outlined"} disabled={Object.values(matches).includes(c)||attempts===0} onClick={()=>chooseCapital(c)} sx={{fontSize:26,fontWeight:1000}}>{c}{wrong===c&&" ✕"}</Button>)}</Stack></Paper>
+    <Paper variant="outlined" sx={{p:1.5,borderRadius:4,bgcolor:"#fbfbfe"}}><Typography fontWeight={1000} sx={{mb:1}}>🔤 Small letters</Typography><Stack spacing={1}>{letters.map(l=><Button key={l} variant={selectedSmall===l?"contained":"outlined"} disabled={!!matches[l]||attempts===0} onClick={()=>chooseSmall(l)} sx={{fontSize:28,fontWeight:1000,textTransform:"none",minHeight:58,borderRadius:3}}>{l.toLowerCase()}{matches[l]&&" ✓"}</Button>)}</Stack></Paper>
+    <Paper variant="outlined" sx={{p:1.5,borderRadius:4,bgcolor:"#fbfbfe"}}><Typography fontWeight={1000} sx={{mb:1}}>🔠 Capital letters</Typography><Stack spacing={1}>{capitals.map(c=><Button key={c} variant={Object.values(matches).includes(c)?"contained":"outlined"} disabled={Object.values(matches).includes(c)||attempts===0} onClick={()=>chooseCapital(c)} sx={{fontSize:26,fontWeight:1000}}>{c}{wrong===c&&" ✕"}</Button>)}</Stack></Paper>
    </Box>
    <Paper sx={{mt:2,p:1.5,borderRadius:3,bgcolor:message.startsWith("Great")?"#e9f8ef":"#fff4e5"}}><Typography fontWeight={900}>{message||"Select a small letter, then tap its matching capital."}</Typography></Paper>
    <Stack direction={{xs:"column",sm:"row"}} spacing={1.2} sx={{mt:2}}>
@@ -216,8 +223,8 @@ export function AlphabetPictureMatchingGame({onBack}) {
 
  return <Box sx={{minHeight:"100vh",bgcolor:"#f7f8fc"}}><Container maxWidth="md" sx={{py:3}}>
   <GameHeader onBack={onBack} title="Alphabet → Picture Match" subtitle="Tap the letter or picture to hear its sound, then find the matching pictures"/>
-  <Paper sx={{p:{xs:1.5,md:2.5},borderRadius:4}}>
-   <Stack direction={{xs:"column",sm:"row"}} spacing={1} justifyContent="space-between" alignItems={{sm:"center"}}>
+  <Paper sx={{p:{xs:1.5,md:2.5},borderRadius:5,border:"1px solid #e5e7ef",boxShadow:"0 12px 40px rgba(40,45,80,.08)"}}>
+   <Stack direction={{xs:"column",sm:"row"}} spacing={1} justifyContent="space-between" alignItems={{sm:"center"}} sx={{mb:1}}>
     <Chip label={"Round "+(round+1)} color="primary"/>
     <Chip label={"Letter "+targetLetter} color="secondary" sx={{fontSize:20,fontWeight:1000}}/>
     <Chip label={"Find "+targetCount+" picture"+(targetCount===1?"":"s")}/>
@@ -250,10 +257,14 @@ export function AlphabetPictureMatchingGame({onBack}) {
     </Typography>
    </Popover>
    <LinearProgress variant="determinate" value={(matched.length/targetCount)*100} sx={{mt:2,height:10,borderRadius:10}}/>
-   <Paper onClick={()=>speakTarget(targetLetter)} sx={{mt:2,p:2,borderRadius:3,textAlign:"center",cursor:soundOn?"pointer":"default",border:"2px solid #6658d3"}}><Typography variant="h2" fontWeight={1000}>{targetLetter}</Typography><Typography fontWeight={800}>Tap the letter to hear it</Typography></Paper>
+   <Paper onClick={()=>speakTarget(targetLetter)} sx={{mt:2,p:{xs:2,md:2.5},borderRadius:4,textAlign:"center",cursor:soundOn?"pointer":"default",border:"2px solid #6658d3",bgcolor:"#f7f5ff"}}>
+    <Typography variant="overline" fontWeight={900} color="text.secondary">Find pictures for</Typography>
+    <Typography variant="h1" fontWeight={1000} sx={{lineHeight:1}}>{targetLetter}</Typography>
+    <Stack direction="row" justifyContent="center" alignItems="center" spacing={.5}><VolumeUpIcon fontSize="small"/><Typography fontWeight={800}>Tap to hear the letter</Typography></Stack>
+   </Paper>
    <Box sx={{display:"grid",gridTemplateColumns:{xs:"1fr 1fr",sm:"repeat(3,1fr)"},gap:1.5,mt:3}}>
-    {choices.map(([emoji,word])=><Paper key={word} onClick={()=>choose([emoji,word])} sx={{p:1.2,borderRadius:3,cursor:attempts>0?"pointer":"default",border:"2px solid",borderColor:matched.includes(word)?"#39a96b":selected===word?"#6658d3":"transparent",bgcolor:matched.includes(word)?"#e9f8ef":"#fff",textAlign:"center"}}>
-      <Typography sx={{fontSize:{xs:48,md:64}}}>{emoji}</Typography><Typography fontWeight={950}>{word}</Typography>{matched.includes(word)&&<CheckCircleIcon color="success"/>}
+    {choices.map(([emoji,word])=><Paper key={word} onClick={()=>choose([emoji,word])} sx={{p:1.2,borderRadius:4,cursor:attempts>0?"pointer":"default",border:"2px solid",borderColor:matched.includes(word)?"#39a96b":selected===word?"#6658d3":"transparent",bgcolor:matched.includes(word)?"#e9f8ef":"#fff",textAlign:"center"}}>
+      <Typography sx={{fontSize:{xs:52,md:68},lineHeight:1.1}}>{emoji}</Typography><Typography fontWeight={950} sx={{mt:.5}}>{word}</Typography>{matched.includes(word)&&<CheckCircleIcon color="success"/>}
     </Paper>)}
    </Box>
    <Paper sx={{mt:2,p:1.5,borderRadius:3,bgcolor:message.startsWith("Correct")?"#e9f8ef":"#fff4e5"}}><Typography fontWeight={900}>{message||("Find "+targetCount+" picture"+(targetCount===1?"":"s")+" for "+targetLetter+".")}</Typography></Paper>
