@@ -2,7 +2,7 @@ name: Deploy Alphabet Flipper to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [auth-admin-2]
     paths-ignore:
       - 'deploy/**'
   workflow_dispatch:
