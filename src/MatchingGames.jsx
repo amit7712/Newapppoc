@@ -131,7 +131,7 @@ export function AlphabetMatchingGame({onBack}) {
    </Box>
    <Paper sx={{mt:2,p:1.5,borderRadius:3,bgcolor:message.startsWith("Great")?"#e9f8ef":"#fff4e5"}}><Typography fontWeight={900}>{message||"Select a small letter, then tap its matching capital."}</Typography></Paper>
    <Stack direction={{xs:"column",sm:"row"}} spacing={1.2} sx={{mt:2}}>
-    <Button variant="outlined" startIcon={<RefreshIcon/>} onClick={reset}>Retry Round</Button>
+    <Button variant="outlined" startIcon={<RefreshIcon/>} disabled={attempts>0} onClick={reset}>Retry Round</Button>
     {(complete||attempts===0)&&<Button variant="contained" onClick={()=>makeRound(round+1,order)}>{order==="random"?"Next Random Round":"Next Series Round"}</Button>}
    </Stack>
   </Paper>
