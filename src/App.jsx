@@ -428,7 +428,7 @@ export default function App() {
   }
 
   if (screen === "games") return <Games onBack={() => goTo("home")} onStart={start} onHindi={() => goTo("hindi")} />;
-  if (screen === "hindi") return <HindiVarnamala onBack={() => goTo("games")} />;
+  if (screen === "hindi") return <HindiVarnamala onBack={() => goTo("games")} settings={settings} setSettings={setSettings} />;
   if (screen === "worksheets") return <Worksheets onBack={() => goTo("home")} />;
   if (screen === "progress") return <Progress onBack={() => goTo("home")} visited={visited.size} total={cards.length} />
   return (
@@ -776,67 +776,118 @@ function Games({ onBack, onStart, onHindi }) {
 }
 
 
-function HindiVarnamala({ onBack }) {
+function HindiVarnamala({ onBack, settings, setSettings }) {
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const [repeat, setRepeat] = useState(false);
+  const [visited, setVisited] = useState(() => new Set());
+  const [used, setUsed] = useState(() => new Set([0]));
+  const [nextAnimating, setNextAnimating] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   const current = HINDI_VARNAMALA[index];
 
   const speakHindi = (text) => {
-    if (!("speechSynthesis" in window)) return;
+    if (!flipped || !("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "hi-IN";
-    u.rate = 0.72;
+    u.rate = settings.speed;
     const voice = window.speechSynthesis.getVoices().find(v => /^hi(-|_)/i.test(v.lang));
     if (voice) u.voice = voice;
     window.speechSynthesis.speak(u);
   };
 
-  const next = () => {
-    let nextIndex = index + 1;
-    if (nextIndex >= HINDI_VARNAMALA.length) {
-      nextIndex = repeat ? 0 : index;
+  const pickNextIndex = () => {
+    if (settings.order === "series") return (index + 1) % HINDI_VARNAMALA.length;
+
+    let pool = HINDI_VARNAMALA.map((_, i) => i).filter(i => !used.has(i) && i !== index);
+    if (!pool.length) {
+      pool = HINDI_VARNAMALA.map((_, i) => i).filter(i => i !== index);
+      setUsed(new Set([index]));
     }
-    if (nextIndex === index) return;
-    setFlipped(false);
-    window.setTimeout(() => {
-      setIndex(nextIndex);
-      window.setTimeout(() => setFlipped(true), 40);
-    }, 260);
+    return pool[Math.floor(Math.random() * pool.length)];
   };
+
+  const goNext = () => {
+    if (nextAnimating) return;
+    const nextIndex = pickNextIndex();
+    setNextAnimating(true);
+
+    if (flipped) {
+      setFlipped(false);
+      window.setTimeout(() => {
+        setIndex(nextIndex);
+        if (!settings.repeat) setUsed(old => new Set([...old, nextIndex]));
+        window.setTimeout(() => {
+          setFlipped(true);
+          setVisited(old => new Set([...old, nextIndex]));
+          setNextAnimating(false);
+        }, 40);
+      }, 360);
+    } else {
+      setIndex(nextIndex);
+      if (!settings.repeat) setUsed(old => new Set([...old, nextIndex]));
+      window.setTimeout(() => {
+        setFlipped(true);
+        setVisited(old => new Set([...old, nextIndex]));
+        setNextAnimating(false);
+      }, 40);
+    }
+  };
+
+  const flipCard = () => {
+    if (!flipped) {
+      setFlipped(true);
+      setVisited(old => new Set([...old, index]));
+      return;
+    }
+    goNext();
+  };
+
+  useEffect(() => {
+    if (!flipped && "speechSynthesis" in window) window.speechSynthesis.cancel();
+    return () => {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    };
+  }, [flipped]);
 
   return (
     <Box sx={pageSx}>
-      <Header back={onBack} />
+      <Header back={onBack} onSettings={() => setSettingsOpen(true)} />
       <Container maxWidth="sm" sx={{ py: 2.5, pb: 6 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
           <Box>
             <Typography fontWeight={1000}>हिंदी वर्णमाला Flipper</Typography>
-            <Typography variant="body2" color="text.secondary">अ से ज्ञ तक • {index + 1}/{HINDI_VARNAMALA.length}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              अ से ज्ञ तक • {visited.size}/{HINDI_VARNAMALA.length}
+            </Typography>
           </Box>
-          <FormControlLabel
-            control={<Switch checked={repeat} onChange={e => setRepeat(e.target.checked)} />}
-            label="Repeat"
-          />
         </Stack>
-        <LinearProgress variant="determinate" value={((index + 1) / HINDI_VARNAMALA.length) * 100} sx={{ height: 10, borderRadius: 10, mb: 2 }} />
+
+        <LinearProgress
+          variant="determinate"
+          value={(visited.size / HINDI_VARNAMALA.length) * 100}
+          sx={{ height: 10, borderRadius: 10, mb: 2 }}
+        />
 
         <Box
           className={`flip-scene ${flipped ? "is-flipped" : ""}`}
-          onClick={() => setFlipped(v => !v)}
+          onClick={flipCard}
           role="button"
           tabIndex={0}
-          onKeyDown={e => { if (e.key === "Enter" || e.key === " ") setFlipped(v => !v); }}
+          onKeyDown={e => {
+            if (e.key === "Enter" || e.key === " ") flipCard();
+          }}
         >
           <Box className="flip-card">
             <Card className="flip-face flip-front" elevation={0}>
               <CardContent sx={cardFaceSx}>
                 <Typography sx={{ fontSize: 58 }}>↻</Typography>
                 <Typography variant="h4" fontWeight={950}>टैप करके पलटें</Typography>
-                <Typography sx={{ opacity: .85 }}>नई हिंदी ध्वनि सीखें</Typography>
+                <Typography sx={{ opacity: .85 }}>हिंदी अक्षर सीखें</Typography>
               </CardContent>
             </Card>
+
             <Card className="flip-face flip-back" elevation={0}>
               <CardContent sx={{ ...cardFaceSx, color: "#172033" }}>
                 <Typography sx={{ fontSize: { xs: 92, md: 116 }, fontWeight: 950, lineHeight: .9, color: "primary.main" }}>
@@ -844,7 +895,9 @@ function HindiVarnamala({ onBack }) {
                 </Typography>
                 <Typography sx={{ fontSize: 60, mt: 1 }}>{current[2]}</Typography>
                 <Typography variant="h4" fontWeight={950}>{current[1]}</Typography>
-                <Typography fontWeight={900} color="primary.main">ध्वनि: {current[0]}</Typography>
+                <Typography fontWeight={900} color="primary.main">
+                  अक्षर: {current[0]}
+                </Typography>
               </CardContent>
             </Card>
           </Box>
@@ -856,26 +909,35 @@ function HindiVarnamala({ onBack }) {
         </Stack>
 
         <Button
-          fullWidth variant="contained" onClick={next}
-          disabled={!repeat && index === HINDI_VARNAMALA.length - 1}
-          startIcon={<ArrowForwardIcon />}
+          fullWidth
+          variant="contained"
+          onClick={goNext}
+          disabled={nextAnimating || (!settings.repeat && settings.order === "series" && index === HINDI_VARNAMALA.length - 1)}
+          startIcon={settings.order === "random" ? <ShuffleIcon /> : <PlayArrowIcon />}
           sx={{ mt: 2, borderRadius: 4, py: 1.6, fontWeight: 950 }}
         >
           अगला वर्ण
         </Button>
 
         <Paper sx={{ mt: 3, p: 2.2, borderRadius: 4 }}>
-          <Typography fontWeight={950}>हिंदी वर्णमाला सीखें</Typography>
+          <Typography fontWeight={950}>Learning Journey</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: .5 }}>
-            कार्ड पलटें, अक्षर और शब्द की आवाज़ सुनें, फिर अगला वर्ण सीखें।
+            Flip करें, अक्षर और शब्द की आवाज़ सुनें, फिर अगले वर्ण पर जाएँ।
           </Typography>
           <Stack direction="row" spacing={1} mt={1.5} flexWrap="wrap">
-            <Chip label={index < 13 ? "स्वर" : "व्यंजन"} />
-            <Chip label={repeat ? "Repeat On" : "एक बार पूरा"} />
-            <Chip label={`Progress: ${index + 1}/${HINDI_VARNAMALA.length}`} />
+            <Chip label={settings.order === "series" ? "Series" : "Mixed"} />
+            <Chip label={settings.repeat ? "Repeat On" : "Repeat Off"} />
+            <Chip label={`Explored: ${visited.size}`} />
           </Stack>
         </Paper>
       </Container>
+
+      <Settings
+        open={settingsOpen}
+        close={() => setSettingsOpen(false)}
+        settings={settings}
+        setSettings={setSettings}
+      />
     </Box>
   );
 }
