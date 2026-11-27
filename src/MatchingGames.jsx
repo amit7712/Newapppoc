@@ -221,7 +221,6 @@ export function AlphabetPictureMatchingGame({onBack}) {
  };
  const complete=matched.length>=targetCount;
  const allMatched=complete;
- const allMatched=complete;
 
  return <Box sx={{minHeight:"100vh",bgcolor:"#f7f8fc"}}><Container maxWidth="md" sx={{py:3}}>
   <GameHeader onBack={onBack} title="Alphabet → Picture Match" subtitle="Tap the letter or picture to hear its sound, then find the matching pictures"/>
