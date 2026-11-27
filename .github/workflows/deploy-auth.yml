@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - feature/auth-admin
+    paths-ignore:
+      - 'deploy/**'
   workflow_dispatch:
 
 permissions:
