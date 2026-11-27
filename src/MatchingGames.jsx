@@ -168,12 +168,25 @@ export function AlphabetPictureMatchingGame({onBack}) {
  };
 
  useEffect(()=>{ buildRound(0,order); },[]);
- useEffect(()=>{ if(choices.length && soundOn) speakTarget(targetLetter); },[targetLetter]);
+ useEffect(()=>{ if(choices.length && soundOn) speakTarget(targetLetter); },[targetLetter, soundOn]);
+ useEffect(()=>{
+   if(!soundOn || !("speechSynthesis" in window)) return;
+   const unlock = () => {
+     window.speechSynthesis.getVoices();
+     window.speechSynthesis.resume();
+   };
+   window.addEventListener("pointerdown", unlock, {once:true});
+   window.addEventListener("touchstart", unlock, {once:true});
+   return () => {
+     window.removeEventListener("pointerdown", unlock);
+     window.removeEventListener("touchstart", unlock);
+   };
+ },[soundOn]);
 
  const choose=item=>{
    if(matched.includes(item[1])||attempts<=0)return;
    setSelected(item[1]);
-   speakWord(item[1]);
+   if(soundOn){ window.speechSynthesis?.resume(); speakWord(item[1]); }
    const isTarget=PICTURE_POOL[targetLetter]?.some(([emoji,word])=>word===item[1]);
    if(isTarget){
      setMatched(m=>m.includes(item[1])?m:[...m,item[1]]);
@@ -199,7 +212,7 @@ export function AlphabetPictureMatchingGame({onBack}) {
     <Select size="small" value={order} onChange={e=>{setOrder(e.target.value);setSeenLetters([]);buildRound(0,e.target.value)}} sx={{minWidth:170}}>
       <MenuItem value="series">Series Rounds</MenuItem><MenuItem value="random">Random Rounds</MenuItem>
     </Select>
-    <FormControlLabel control={<Switch checked={soundOn} onChange={e=>setSoundOn(e.target.checked)} />} label="Sound On"/>
+    <FormControlLabel control={<Switch checked={soundOn} onChange={e=>{const next=e.target.checked;setSoundOn(next);if(next){window.speechSynthesis?.resume();window.setTimeout(()=>speakTarget(targetLetter),100);}}} />} label="Sound On"/>
     <Select size="small" value={maxRetries} onChange={e=>{setMaxRetries(Number(e.target.value));setAttempts(Number(e.target.value))}} sx={{minWidth:150}}>
       <MenuItem value={5}>5 Retries</MenuItem><MenuItem value={6}>6 Retries</MenuItem><MenuItem value={8}>8 Retries</MenuItem><MenuItem value={10}>10 Retries</MenuItem>
     </Select>
