@@ -429,7 +429,7 @@ export default function App() {
     );
   }
 
-  if (screen === "games") return <Games onBack={() => goTo("home")} onStart={start} onHindi={() => goTo("hindi")} />;
+  if (screen === "games") return <Games onBack={() => goTo("home")} onStart={start} onHindi={() => goTo("hindi")} onCapitalMatch={() => goTo("match-capital")} onPictureMatch={() => goTo("match-picture")} />;
   if (screen === "hindi") return <HindiVarnamala onBack={() => goTo("games")} settings={settings} setSettings={setSettings} />;
   if (screen === "match-capital") return <AlphabetMatchingGame onBack={() => goTo("games")} />;
   if (screen === "match-picture") return <AlphabetPictureMatchingGame onBack={() => goTo("games")} />;
@@ -753,7 +753,7 @@ function Settings({ open, close, settings, setSettings }) {
   );
 }
 
-function Games({ onBack, onStart, onHindi }) {
+function Games({ onBack, onStart, onHindi, onCapitalMatch, onPictureMatch }) {
   return (
     <Box sx={pageSx}>
       <Header back={onBack} />
@@ -777,13 +777,13 @@ function Games({ onBack, onStart, onHindi }) {
             <Typography fontSize={48}>🔤</Typography>
             <Typography fontWeight={950}>Small → Capital Matching</Typography>
             <Typography color="text.secondary" sx={{ mt: .4 }}>Match a, b, c with A, B, C. 5 retries per round.</Typography>
-            <Button variant="contained" onClick={() => goTo("match-capital")} sx={{ mt: 2 }}>Play Matching</Button>
+            <Button variant="contained" onClick={onCapitalMatch} sx={{ mt: 2 }}>Play Matching</Button>
           </Paper>
           <Paper sx={{ p: 3, borderRadius: 4, bgcolor: "#eefbf4" }}>
             <Typography fontSize={48}>🖼️</Typography>
             <Typography fontWeight={950}>Alphabet → Picture Matching</Typography>
             <Typography color="text.secondary" sx={{ mt: .4 }}>Find shuffled pictures that begin with the shown letter.</Typography>
-            <Button variant="contained" onClick={() => goTo("match-picture")} sx={{ mt: 2 }}>Play Picture Match</Button>
+            <Button variant="contained" onClick={onPictureMatch} sx={{ mt: 2 }}>Play Picture Match</Button>
           </Paper>
         </Box>
       </Container>
