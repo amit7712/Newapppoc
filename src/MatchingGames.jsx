@@ -221,6 +221,7 @@ export function AlphabetPictureMatchingGame({onBack}) {
  };
  const complete=matched.length>=targetCount;
  const allMatched=complete;
+ useEffect(()=>{ if(complete){ setMessage("Great! You found all "+targetCount+" "+targetLetter+" pictures!"); } },[complete,targetCount,targetLetter]);
 
  return <Box sx={{minHeight:"100vh",bgcolor:"#f7f8fc"}}><Container maxWidth="md" sx={{py:3}}>
   <GameHeader onBack={onBack} title="Alphabet → Picture Match" subtitle="Tap the letter or picture to hear its sound, then find the matching pictures"/>
@@ -268,10 +269,10 @@ export function AlphabetPictureMatchingGame({onBack}) {
       <Typography sx={{fontSize:{xs:52,md:68},lineHeight:1.1}}>{emoji}</Typography><Typography fontWeight={950} sx={{mt:.5}}>{word}</Typography>{matched.includes(word)&&<CheckCircleIcon color="success"/>}
     </Paper>)}
    </Box>
-   <Paper sx={{mt:2,p:1.5,borderRadius:3,bgcolor:message.startsWith("Correct")?"#e9f8ef":"#fff4e5"}}><Typography fontWeight={900}>{message||("Find "+targetCount+" picture"+(targetCount===1?"":"s")+" for "+targetLetter+".")}</Typography></Paper>
+   <Paper sx={{mt:2,p:1.5,borderRadius:3,bgcolor:message.startsWith("Correct")||message.startsWith("Great")?"#e9f8ef":"#fff4e5"}}><Typography fontWeight={900}>{message||("Find "+targetCount+" picture"+(targetCount===1?"":"s")+" for "+targetLetter+".")}</Typography></Paper>
    <Stack direction={{xs:"column",sm:"row"}} spacing={1.2} sx={{mt:2}}>
     <Button variant="outlined" startIcon={<RefreshIcon/>} onClick={()=>buildRound(round,order)}>New Random Set</Button>
-    {(complete||attempts===0)&&<Button variant="contained" onClick={()=>buildRound(round+1,order)}>{order==="series"?"Next Series Round":"Next Random Round"}</Button>}
+    {(complete||attempts===0)&&<Button variant="contained" color="success" startIcon={<AutoAwesomeIcon/>} onClick={()=>buildRound(round+1,order)}>{order==="series"?"Next Series Round":"Next Random Round"}</Button>}
    </Stack>
   </Paper>
  </Container></Box>;
