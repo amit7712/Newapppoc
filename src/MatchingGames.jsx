@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Box, Button, Chip, Container, FormControlLabel, LinearProgress, Paper, Select, MenuItem, Stack, Switch, Typography } from "@mui/material";
+import { Box, Button, Chip, Container, FormControlLabel, IconButton, LinearProgress, Paper, Popover, Select, MenuItem, Stack, Switch, Typography } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import SettingsIcon from "@mui/icons-material/Settings";
 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const PICTURE_POOL = {
@@ -39,7 +40,7 @@ function GameHeader({onBack,title,subtitle}) {
 
 export function AlphabetMatchingGame({onBack}) {
  const [round,setRound]=useState(0), [matches,setMatches]=useState({}), [selectedSmall,setSelectedSmall]=useState(null), [attempts,setAttempts]=useState(5), [message,setMessage]=useState(""), [wrong,setWrong]=useState(null);
- const [order,setOrder]=useState("series"), [repeat,setRepeat]=useState(true), [roundLetters,setRoundLetters]=useState([]), [seenLetters,setSeenLetters]=useState([]);
+ const [order,setOrder]=useState("series"), [repeat,setRepeat]=useState(true), [roundLetters,setRoundLetters]=useState([]), [seenLetters,setSeenLetters]=useState([]), [settingsAnchor,setSettingsAnchor]=useState(null);
 
  const makeRound=(nextRound, nextOrder=order)=>{
    let source = repeat ? ALPHABET : ALPHABET.filter(l => !seenLetters.includes(l));
@@ -94,13 +95,28 @@ export function AlphabetMatchingGame({onBack}) {
    <Stack direction={{xs:"column",sm:"row"}} spacing={1} justifyContent="space-between" alignItems={{sm:"center"}}>
     <Chip label={"Round "+(round+1)} color="primary"/><Chip label={"Retries: "+attempts+"/5"} color={attempts<=1?"error":"default"}/><Chip label={Object.keys(matches).length+"/"+letters.length+" matched"}/>
    </Stack>
-   <Stack direction={{xs:"column",sm:"row"}} spacing={1.5} alignItems={{xs:"stretch",sm:"center"}} sx={{mt:2}}>
+   <Stack direction="row" justifyContent="flex-end" sx={{mt:1}}>
+     <IconButton aria-label="Game settings" onClick={e=>setSettingsAnchor(e.currentTarget)} sx={{border:"1px solid #d8dbe7",bgcolor:"#fff"}}>
+       <SettingsIcon/>
+     </IconButton>
+   </Stack>
+   <Popover
+     open={Boolean(settingsAnchor)}
+     anchorEl={settingsAnchor}
+     onClose={()=>setSettingsAnchor(null)}
+     anchorOrigin={{vertical:"bottom",horizontal:"right"}}
+     transformOrigin={{vertical:"top",horizontal:"right"}}
+     PaperProps={{sx:{p:2,borderRadius:3,minWidth:260}}}
+   >
+     <Typography fontWeight={1000} sx={{mb:1.5}}>Game Settings</Typography>
      <FormControlLabel control={<Switch checked={repeat} onChange={e=>setRepeat(e.target.checked)} />} label="Allow Repeat Letters"/>
-     <Select size="small" value={order} onChange={e=>{setOrder(e.target.value);makeRound(0,e.target.value)}} sx={{minWidth:170}}>
+     <Select fullWidth size="small" value={order} onChange={e=>{setOrder(e.target.value);makeRound(0,e.target.value);setSettingsAnchor(null)}} sx={{mt:1}}>
        <MenuItem value="series">Series Rounds</MenuItem><MenuItem value="random">Random Rounds</MenuItem>
      </Select>
-   </Stack>
-   <Typography variant="caption" color="text.secondary">Series = A→Z groups. Random = shuffled letters. Repeat On allows letters to appear again.</Typography>
+     <Typography variant="caption" color="text.secondary" sx={{display:"block",mt:1}}>
+       Series = A→Z groups. Random = shuffled letters. Repeat On allows letters to appear again.
+     </Typography>
+   </Popover>
    <LinearProgress variant="determinate" value={(Object.keys(matches).length/letters.length)*100} sx={{mt:2,height:10,borderRadius:10}}/>
    <Box sx={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:2,mt:3}}>
     <Paper variant="outlined" sx={{p:1.5,borderRadius:3}}><Typography fontWeight={1000} sx={{mb:1}}>Small letters</Typography><Stack spacing={1}>{letters.map(l=><Button key={l} variant={selectedSmall===l?"contained":"outlined"} disabled={!!matches[l]||attempts===0} onClick={()=>chooseSmall(l)} sx={{fontSize:26,fontWeight:1000,textTransform:"none"}}>{l.toLowerCase()}{matches[l]&&" ✓"}</Button>)}</Stack></Paper>
