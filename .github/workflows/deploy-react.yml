@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - React
+    paths-ignore:
+      - 'deploy/**'
   workflow_dispatch:
 
 permissions:
