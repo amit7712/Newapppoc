@@ -116,11 +116,41 @@ export function AlphabetMatchingGame({onBack}) {
 }
 
 export function AlphabetPictureMatchingGame({onBack}) {
- const [round,setRound]=useState(0), [matched,setMatched]=useState([]), [selected,setSelected]=useState(null), [attempts,setAttempts]=useState(5), [message,setMessage]=useState("");
+ const [round,setRound]=useState(0), [matched,setMatched]=useState([]), [selected,setSelected]=useState(null), [attempts,setAttempts]=useState(10), [message,setMessage]=useState("");
  const [targetLetter,setTargetLetter]=useState("A"), [targetCount,setTargetCount]=useState(2), [choices,setChoices]=useState([]);
+ const [order,setOrder]=useState("random"), [repeat,setRepeat]=useState(true), [soundOn,setSoundOn]=useState(true), [maxRetries,setMaxRetries]=useState(10), [seenLetters,setSeenLetters]=useState([]);
 
- const buildRound=(nextRound)=>{
-   const letter=shuffle(ALPHABET)[0];
+ const speakWord=(word)=>{
+   if(!soundOn || !("speechSynthesis" in window)) return;
+   window.speechSynthesis.cancel();
+   const u=new SpeechSynthesisUtterance(word);
+   u.lang="en-US"; u.rate=0.8;
+   window.speechSynthesis.speak(u);
+ };
+ const speakTarget=(letter)=>{
+   if(!soundOn || !("speechSynthesis" in window)) return;
+   window.speechSynthesis.cancel();
+   const u=new SpeechSynthesisUtterance(letter);
+   u.lang="en-US"; u.rate=0.8;
+   window.speechSynthesis.speak(u);
+ };
+
+ const buildRound=(nextRound=0, nextOrder=order)=>{
+   let source=repeat ? ALPHABET : ALPHABET.filter(l=>!seenLetters.includes(l));
+   if(!source.length){
+     setSeenLetters([]);
+     source=[...ALPHABET];
+   }
+   let letter;
+   if(nextOrder==="series"){
+     letter=ALPHABET[nextRound%ALPHABET.length];
+     if(!repeat && seenLetters.includes(letter)){
+       const available=source;
+       letter=available[0]||ALPHABET[nextRound%ALPHABET.length];
+     }
+   } else {
+     letter=shuffle(source)[0];
+   }
    const valid=PICTURE_POOL[letter]||[];
    const count=1+Math.floor(Math.random()*Math.min(4,valid.length));
    const targets=shuffle(valid).slice(0,count);
@@ -131,42 +161,61 @@ export function AlphabetPictureMatchingGame({onBack}) {
    setRound(nextRound);
    setMatched([]);
    setSelected(null);
-   setAttempts(5);
+   setAttempts(maxRetries);
    setMessage("");
+   setSeenLetters(old=>repeat ? old : [...new Set([...old,letter])]);
+   if(soundOn) window.setTimeout(()=>speakTarget(letter),80);
  };
- useEffect(() => { if(choices.length===0) buildRound(0); }, []);
+
+ useEffect(()=>{ buildRound(0,order); },[]);
+ useEffect(()=>{ if(choices.length && soundOn) speakTarget(targetLetter); },[targetLetter]);
 
  const choose=item=>{
    if(matched.includes(item[1])||attempts<=0)return;
    setSelected(item[1]);
+   speakWord(item[1]);
    const isTarget=PICTURE_POOL[targetLetter]?.some(([emoji,word])=>word===item[1]);
    if(isTarget){
-     setMatched(m=>[...m,item[1]]);
+     setMatched(m=>m.includes(item[1])?m:[...m,item[1]]);
      setMessage("Correct! "+targetLetter+" is for "+item[1]+".");
    } else {
-     setAttempts(a=>a-1);
+     setAttempts(a=>Math.max(0,a-1));
      setMessage("Try again. Find a picture that starts with "+targetLetter+".");
    }
  };
  const complete=matched.length>=targetCount;
 
  return <Box sx={{minHeight:"100vh",bgcolor:"#f7f8fc"}}><Container maxWidth="md" sx={{py:3}}>
-  <GameHeader onBack={onBack} title="Alphabet → Picture Match" subtitle="Find a random number of pictures that begin with the shown letter"/>
+  <GameHeader onBack={onBack} title="Alphabet → Picture Match" subtitle="Tap the letter or picture to hear its sound, then find the matching pictures"/>
   <Paper sx={{p:{xs:1.5,md:2.5},borderRadius:4}}>
    <Stack direction={{xs:"column",sm:"row"}} spacing={1} justifyContent="space-between" alignItems={{sm:"center"}}>
-    <Chip label={"Letter "+targetLetter} color="primary" sx={{fontSize:20,fontWeight:1000}}/>
-    <Chip label={"Find "+targetCount+" picture"+(targetCount===1?"":"s")} color="secondary"/>
-    <Chip label={"Retries: "+attempts+"/5"} color={attempts<=1?"error":"default"}/>
-    <Chip label={matched.length+"/"+targetCount+" found"}/>
+    <Chip label={"Round "+(round+1)} color="primary"/>
+    <Chip label={"Letter "+targetLetter} color="secondary" sx={{fontSize:20,fontWeight:1000}}/>
+    <Chip label={"Find "+targetCount+" picture"+(targetCount===1?"":"s")}/>
+    <Chip label={"Retries: "+attempts+"/"+maxRetries} color={attempts<=1?"error":"default"}/>
    </Stack>
+   <Stack direction={{xs:"column",sm:"row"}} spacing={1.5} alignItems={{xs:"stretch",sm:"center"}} sx={{mt:2}}>
+    <FormControlLabel control={<Switch checked={repeat} onChange={e=>{setRepeat(e.target.checked);setSeenLetters([]);buildRound(0,order)}} />} label="Allow Repeat Letters"/>
+    <Select size="small" value={order} onChange={e=>{setOrder(e.target.value);setSeenLetters([]);buildRound(0,e.target.value)}} sx={{minWidth:170}}>
+      <MenuItem value="series">Series Rounds</MenuItem><MenuItem value="random">Random Rounds</MenuItem>
+    </Select>
+    <FormControlLabel control={<Switch checked={soundOn} onChange={e=>setSoundOn(e.target.checked)} />} label="Sound On"/>
+    <Select size="small" value={maxRetries} onChange={e=>{setMaxRetries(Number(e.target.value));setAttempts(Number(e.target.value))}} sx={{minWidth:150}}>
+      <MenuItem value={5}>5 Retries</MenuItem><MenuItem value={6}>6 Retries</MenuItem><MenuItem value={8}>8 Retries</MenuItem><MenuItem value={10}>10 Retries</MenuItem>
+    </Select>
+   </Stack>
+   <Typography variant="caption" color="text.secondary">Series = A→Z rounds. Random = shuffled letters. Repeat controls whether a letter may appear again. Sound controls letter and picture-word pronunciation.</Typography>
    <LinearProgress variant="determinate" value={(matched.length/targetCount)*100} sx={{mt:2,height:10,borderRadius:10}}/>
+   <Paper onClick={()=>speakTarget(targetLetter)} sx={{mt:2,p:2,borderRadius:3,textAlign:"center",cursor:soundOn?"pointer":"default",border:"2px solid #6658d3"}}><Typography variant="h2" fontWeight={1000}>{targetLetter}</Typography><Typography fontWeight={800}>Tap the letter to hear it</Typography></Paper>
    <Box sx={{display:"grid",gridTemplateColumns:{xs:"1fr 1fr",sm:"repeat(3,1fr)"},gap:1.5,mt:3}}>
-    {choices.map(([emoji,word])=><Paper key={word} onClick={()=>choose([emoji,word])} sx={{p:1.2,borderRadius:3,cursor:"pointer",border:"2px solid",borderColor:matched.includes(word)?"#39a96b":selected===word?"#6658d3":"transparent",bgcolor:matched.includes(word)?"#e9f8ef":"#fff",textAlign:"center"}}><Typography sx={{fontSize:{xs:48,md:64}}}>{emoji}</Typography><Typography fontWeight={950}>{word}</Typography>{matched.includes(word)&&<CheckCircleIcon color="success"/>}</Paper>)}
+    {choices.map(([emoji,word])=><Paper key={word} onClick={()=>choose([emoji,word])} sx={{p:1.2,borderRadius:3,cursor:attempts>0?"pointer":"default",border:"2px solid",borderColor:matched.includes(word)?"#39a96b":selected===word?"#6658d3":"transparent",bgcolor:matched.includes(word)?"#e9f8ef":"#fff",textAlign:"center"}}>
+      <Typography sx={{fontSize:{xs:48,md:64}}}>{emoji}</Typography><Typography fontWeight={950}>{word}</Typography>{matched.includes(word)&&<CheckCircleIcon color="success"/>}
+    </Paper>)}
    </Box>
    <Paper sx={{mt:2,p:1.5,borderRadius:3,bgcolor:message.startsWith("Correct")?"#e9f8ef":"#fff4e5"}}><Typography fontWeight={900}>{message||("Find "+targetCount+" picture"+(targetCount===1?"":"s")+" for "+targetLetter+".")}</Typography></Paper>
    <Stack direction={{xs:"column",sm:"row"}} spacing={1.2} sx={{mt:2}}>
-    <Button variant="outlined" startIcon={<RefreshIcon/>} onClick={()=>buildRound(round)}>New Random Set</Button>
-    {(complete||attempts===0)&&<Button variant="contained" onClick={()=>buildRound(round+1)}>Next Random Letter</Button>}
+    <Button variant="outlined" startIcon={<RefreshIcon/>} onClick={()=>buildRound(round,order)}>New Random Set</Button>
+    {(complete||attempts===0)&&<Button variant="contained" onClick={()=>buildRound(round+1,order)}>{order==="series"?"Next Series Round":"Next Random Round"}</Button>}
    </Stack>
   </Paper>
  </Container></Box>;
