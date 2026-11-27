@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Box, Button, Chip, Container, FormControlLabel, LinearProgress, Paper, Select, MenuItem, Stack, Switch, Typography } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import RefreshIcon from "@mui/icons-material/Refresh";
@@ -39,16 +39,24 @@ function GameHeader({onBack,title,subtitle}) {
 
 export function AlphabetMatchingGame({onBack}) {
  const [round,setRound]=useState(0), [matches,setMatches]=useState({}), [selectedSmall,setSelectedSmall]=useState(null), [attempts,setAttempts]=useState(5), [message,setMessage]=useState(""), [wrong,setWrong]=useState(null);
- const [order,setOrder]=useState("series"), [repeat,setRepeat]=useState(true), [roundLetters,setRoundLetters]=useState(ALPHABET.slice(0,6));
+ const [order,setOrder]=useState("series"), [repeat,setRepeat]=useState(true), [roundLetters,setRoundLetters]=useState([]), [seenLetters,setSeenLetters]=useState([]);
 
  const makeRound=(nextRound, nextOrder=order)=>{
+   let source = repeat ? ALPHABET : ALPHABET.filter(l => !seenLetters.includes(l));
+   if(source.length < 6){
+     if(!repeat) setSeenLetters([]);
+     source = ALPHABET;
+   }
    let next;
    if(nextOrder==="series"){
-     const start=(nextRound*6)%26;
-     next=Array.from({length:6},(_,i)=>ALPHABET[(start+i)%26]);
+     const start = repeat ? ((nextRound*6)%26) : ALPHABET.indexOf(source[0]);
+     const sequence = Array.from({length:26},(_,i)=>ALPHABET[(start+i)%26]);
+     next = sequence.filter(l => repeat || !seenLetters.includes(l)).slice(0,6);
+     if(next.length < 6) next = shuffle(source).slice(0,6);
    } else {
-     next=shuffle(ALPHABET).slice(0,6);
+     next=shuffle(source).slice(0,6);
    }
+   setSeenLetters(old => repeat ? old : [...new Set([...old,...next])]);
    setRoundLetters(next);
    setRound(nextRound);
    setMatches({});
@@ -57,7 +65,7 @@ export function AlphabetMatchingGame({onBack}) {
    setMessage("");
    setWrong(null);
  };
- const letters=roundLetters;
+ const letters=roundLetters.length ? roundLetters : ALPHABET.slice(0,6);
  const capitals=useMemo(()=>shuffle(letters),[round,letters.join("")]);
 
  const chooseSmall=l=>{
@@ -126,7 +134,7 @@ export function AlphabetPictureMatchingGame({onBack}) {
    setAttempts(5);
    setMessage("");
  };
- if(choices.length===0) buildRound(0);
+ useEffect(() => { if(choices.length===0) buildRound(0); }, []);
 
  const choose=item=>{
    if(matched.includes(item[1])||attempts<=0)return;
