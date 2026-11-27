@@ -3,8 +3,12 @@ name: Validate Alphabet Flipper auth-admin
 on:
   push:
     branches: [feature/auth-admin]
+    paths-ignore:
+      - 'deploy/**'
   pull_request:
     branches: [feature/auth-admin]
+    paths-ignore:
+      - 'deploy/**'
   workflow_dispatch:
 
 permissions:
