@@ -221,6 +221,7 @@ export function AlphabetPictureMatchingGame({onBack}) {
  };
  const complete=matched.length>=targetCount;
  const allMatched=complete;
+ const allMatched=complete;
 
  return <Box sx={{minHeight:"100vh",bgcolor:"#f7f8fc"}}><Container maxWidth="md" sx={{py:3}}>
   <GameHeader onBack={onBack} title="Alphabet → Picture Match" subtitle="Tap the letter or picture to hear its sound, then find the matching pictures"/>
@@ -264,7 +265,7 @@ export function AlphabetPictureMatchingGame({onBack}) {
     <Stack direction="row" justifyContent="center" alignItems="center" spacing={.5}><VolumeUpIcon fontSize="small"/><Typography fontWeight={800}>Tap to hear the letter</Typography></Stack>
    </Paper>
    <Box sx={{display:"grid",gridTemplateColumns:{xs:"1fr 1fr",sm:"repeat(3,1fr)"},gap:1.5,mt:3}}>
-    {choices.map(([emoji,word])=><Paper key={word} onClick={()=>choose([emoji,word])} sx={{p:1.2,borderRadius:4,cursor:attempts>0?"pointer":"default",border:"2px solid",borderColor:matched.includes(word)?"#39a96b":selected===word?"#6658d3":"transparent",bgcolor:matched.includes(word)?"#e9f8ef":"#fff",textAlign:"center"}}>
+    {choices.map(([emoji,word])=><Paper key={word} onClick={()=>choose([emoji,word])} sx={{p:1.2,borderRadius:4,cursor:attempts>0&&!allMatched?"pointer":"default",border:"2px solid",borderColor:matched.includes(word)?"#39a96b":selected===word?"#6658d3":"transparent",bgcolor:matched.includes(word)?"#e9f8ef":allMatched?"#f1f2f6":"#fff",textAlign:"center",opacity:allMatched&&!matched.includes(word)?0.45:1,pointerEvents:allMatched&&!matched.includes(word)?"none":"auto"}}>
       <Typography sx={{fontSize:{xs:52,md:68},lineHeight:1.1}}>{emoji}</Typography><Typography fontWeight={950} sx={{mt:.5}}>{word}</Typography>{matched.includes(word)&&<CheckCircleIcon color="success"/>}
     </Paper>)}
    </Box>
