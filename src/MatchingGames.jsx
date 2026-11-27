@@ -133,7 +133,7 @@ export function AlphabetMatchingGame({onBack}) {
 
 export function AlphabetPictureMatchingGame({onBack}) {
  const [round,setRound]=useState(0), [matched,setMatched]=useState([]), [selected,setSelected]=useState(null), [attempts,setAttempts]=useState(10), [message,setMessage]=useState("");
- const [targetLetter,setTargetLetter]=useState("A"), [targetCount,setTargetCount]=useState(2), [choices,setChoices]=useState([]);
+ const [targetLetter,setTargetLetter]=useState("A"), [targetCount,setTargetCount]=useState(2), [choices,setChoices]=useState([]), [settingsAnchor,setSettingsAnchor]=useState(null);
  const [order,setOrder]=useState("random"), [repeat,setRepeat]=useState(true), [soundOn,setSoundOn]=useState(true), [maxRetries,setMaxRetries]=useState(10), [seenLetters,setSeenLetters]=useState([]);
 
  const speakWord=(word)=>{
@@ -223,17 +223,32 @@ export function AlphabetPictureMatchingGame({onBack}) {
     <Chip label={"Find "+targetCount+" picture"+(targetCount===1?"":"s")}/>
     <Chip label={"Retries: "+attempts+"/"+maxRetries} color={attempts<=1?"error":"default"}/>
    </Stack>
-   <Stack direction={{xs:"column",sm:"row"}} spacing={1.5} alignItems={{xs:"stretch",sm:"center"}} sx={{mt:2}}>
+   <Stack direction="row" justifyContent="flex-end" sx={{mt:1}}>
+    <IconButton aria-label="Game settings" onClick={e=>setSettingsAnchor(e.currentTarget)} sx={{border:"1px solid #d8dbe7",bgcolor:"#fff"}}>
+      <SettingsIcon/>
+    </IconButton>
+   </Stack>
+   <Popover
+    open={Boolean(settingsAnchor)}
+    anchorEl={settingsAnchor}
+    onClose={()=>setSettingsAnchor(null)}
+    anchorOrigin={{vertical:"bottom",horizontal:"right"}}
+    transformOrigin={{vertical:"top",horizontal:"right"}}
+    PaperProps={{sx:{p:2,borderRadius:3,minWidth:280}}}
+   >
+    <Typography fontWeight={1000} sx={{mb:1.5}}>Game Settings</Typography>
     <FormControlLabel control={<Switch checked={repeat} onChange={e=>{setRepeat(e.target.checked);setSeenLetters([]);buildRound(0,order)}} />} label="Allow Repeat Letters"/>
-    <Select size="small" value={order} onChange={e=>{setOrder(e.target.value);setSeenLetters([]);buildRound(0,e.target.value)}} sx={{minWidth:170}}>
+    <Select fullWidth size="small" value={order} onChange={e=>{setOrder(e.target.value);setSeenLetters([]);buildRound(0,e.target.value);setSettingsAnchor(null)}} sx={{mt:1}}>
       <MenuItem value="series">Series Rounds</MenuItem><MenuItem value="random">Random Rounds</MenuItem>
     </Select>
     <FormControlLabel control={<Switch checked={soundOn} onChange={e=>{const next=e.target.checked;setSoundOn(next);if(next){window.speechSynthesis?.resume();window.setTimeout(()=>speakTarget(targetLetter),100);}}} />} label="Sound On"/>
-    <Select size="small" value={maxRetries} onChange={e=>{setMaxRetries(Number(e.target.value));setAttempts(Number(e.target.value))}} sx={{minWidth:150}}>
+    <Select fullWidth size="small" value={maxRetries} onChange={e=>{const value=Number(e.target.value);setMaxRetries(value);setAttempts(value)}} sx={{mt:1}}>
       <MenuItem value={5}>5 Retries</MenuItem><MenuItem value={6}>6 Retries</MenuItem><MenuItem value={8}>8 Retries</MenuItem><MenuItem value={10}>10 Retries</MenuItem>
     </Select>
-   </Stack>
-   <Typography variant="caption" color="text.secondary">Series = A→Z rounds. Random = shuffled letters. Repeat controls whether a letter may appear again. Sound controls letter and picture-word pronunciation.</Typography>
+    <Typography variant="caption" color="text.secondary" sx={{display:"block",mt:1}}>
+      Series = A→Z rounds. Random = shuffled letters. Repeat controls whether a letter may appear again. Sound controls letter and picture-word pronunciation.
+    </Typography>
+   </Popover>
    <LinearProgress variant="determinate" value={(matched.length/targetCount)*100} sx={{mt:2,height:10,borderRadius:10}}/>
    <Paper onClick={()=>speakTarget(targetLetter)} sx={{mt:2,p:2,borderRadius:3,textAlign:"center",cursor:soundOn?"pointer":"default",border:"2px solid #6658d3"}}><Typography variant="h2" fontWeight={1000}>{targetLetter}</Typography><Typography fontWeight={800}>Tap the letter to hear it</Typography></Paper>
    <Box sx={{display:"grid",gridTemplateColumns:{xs:"1fr 1fr",sm:"repeat(3,1fr)"},gap:1.5,mt:3}}>
