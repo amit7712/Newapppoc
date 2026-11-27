@@ -1,9 +1,10 @@
-name: Deploy React to GitHub Pages
+name: Deploy React/Auth Admin 2 to GitHub Pages
 
 on:
   push:
     branches:
       - React
+      - auth-admin-2
     paths-ignore:
       - 'deploy/**'
   workflow_dispatch:
