@@ -23,6 +23,8 @@ import CelebrationIcon from "@mui/icons-material/Celebration";
 import EditIcon from "@mui/icons-material/Edit";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { alphabet, PHONICS_SOUNDS } from "./alphabet.js";
+import { AlphabetMatchingGame, AlphabetPictureMatchingGame } from "./MatchingGames.jsx";
+import PracticeSheets from "./PracticeSheets.jsx";
 
 const defaults = { repeat: false, order: "random", autoVoice: false, speed: 0.7 };
 const defaultProfile = { name: "Little Learner", level: "LKG", avatar: "🦊", visited: [] };
@@ -429,7 +431,9 @@ export default function App() {
 
   if (screen === "games") return <Games onBack={() => goTo("home")} onStart={start} onHindi={() => goTo("hindi")} />;
   if (screen === "hindi") return <HindiVarnamala onBack={() => goTo("games")} settings={settings} setSettings={setSettings} />;
-  if (screen === "worksheets") return <Worksheets onBack={() => goTo("home")} />;
+  if (screen === "match-capital") return <AlphabetMatchingGame onBack={() => goTo("games")} />;
+  if (screen === "match-picture") return <AlphabetPictureMatchingGame onBack={() => goTo("games")} />;
+  if (screen === "worksheets") return <PracticeSheets onBack={() => goTo("home")} />;
   if (screen === "progress") return <Progress onBack={() => goTo("home")} visited={visited.size} total={cards.length} />
   return (
     <Box sx={pageSx}>
@@ -768,6 +772,18 @@ function Games({ onBack, onStart, onHindi }) {
             <Typography fontWeight={950}>हिंदी वर्णमाला Flipper</Typography>
             <Typography color="text.secondary" sx={{ mt: .4 }}>अ से ज्ञ तक अक्षर, शब्द और हिंदी आवाज़ के साथ।</Typography>
             <Button variant="contained" onClick={onHindi} sx={{ mt: 2 }}>हिंदी शुरू करें</Button>
+          </Paper>
+          <Paper sx={{ p: 3, borderRadius: 4, bgcolor: "#eef5ff" }}>
+            <Typography fontSize={48}>🔤</Typography>
+            <Typography fontWeight={950}>Small → Capital Matching</Typography>
+            <Typography color="text.secondary" sx={{ mt: .4 }}>Match a, b, c with A, B, C. 5 retries per round.</Typography>
+            <Button variant="contained" onClick={() => goTo("match-capital")} sx={{ mt: 2 }}>Play Matching</Button>
+          </Paper>
+          <Paper sx={{ p: 3, borderRadius: 4, bgcolor: "#eefbf4" }}>
+            <Typography fontSize={48}>🖼️</Typography>
+            <Typography fontWeight={950}>Alphabet → Picture Matching</Typography>
+            <Typography color="text.secondary" sx={{ mt: .4 }}>Find shuffled pictures that begin with the shown letter.</Typography>
+            <Button variant="contained" onClick={() => goTo("match-picture")} sx={{ mt: 2 }}>Play Picture Match</Button>
           </Paper>
         </Box>
       </Container>
