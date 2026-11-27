@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - feature/auth-admin
+    paths-ignore:
+      - 'deploy/**'
     paths:
       - "supabase/functions/**"
       - "supabase/config.toml"
